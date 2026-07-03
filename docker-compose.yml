@@ -11,23 +11,14 @@ services:
     expose:
       - "8000"
 
-  caddy:
-    image: caddy:2.8-alpine
+  cloudflared:
+    image: cloudflare/cloudflared:latest
     restart: unless-stopped
     depends_on:
       - web
-    environment:
-      PUBLIC_DOMAIN: ${PUBLIC_DOMAIN:-localhost}
-    ports:
-      - "80:80"
-      - "443:443"
-    volumes:
-      - ./Caddyfile:/etc/caddy/Caddyfile:ro
-      - caddy_data:/data
-      - caddy_config:/config
+    command: tunnel --no-autoupdate run --token ${CLOUDFLARE_TUNNEL_TOKEN}
+    profiles:
+      - tunnel
 
 volumes:
   jobs:
-  caddy_data:
-  caddy_config:
-
