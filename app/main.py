@@ -9,7 +9,7 @@ from pathlib import Path
 from typing import Annotated, Literal
 
 from fastapi import FastAPI, File, Form, HTTPException, UploadFile
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 
 
@@ -110,8 +110,9 @@ async def store_upload(upload: UploadFile, destination: Path) -> None:
 
 
 @app.get("/", include_in_schema=False)
-def index() -> FileResponse:
-    return FileResponse(STATIC_DIR / "index.html")
+@app.head("/", include_in_schema=False)
+def index() -> RedirectResponse:
+    return RedirectResponse(url="/static/index.html")
 
 
 @app.get("/health")

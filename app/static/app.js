@@ -7,7 +7,7 @@ const result = document.querySelector("#result");
 const submit = document.querySelector("#submit");
 const modeTitle = document.querySelector("#mode-title");
 const statusPill = document.querySelector("#status-pill");
-const preview = document.querySelector("#preview");
+const uploadZone = document.querySelector("#upload-zone");
 const previewImage = document.querySelector("#preview-image");
 
 const modeLabels = {
@@ -39,20 +39,41 @@ function setPreview(file) {
   }
 
   if (!file) {
-    preview.classList.remove("has-image");
+    uploadZone.classList.remove("has-image");
     previewImage.removeAttribute("src");
-    fileName.textContent = "PNG、JPG、WEBP、BMP、TIFF";
+    fileName.textContent = "支持 PNG、JPG、WEBP、BMP、TIFF";
     return;
   }
 
   previewUrl = URL.createObjectURL(file);
   previewImage.src = previewUrl;
-  preview.classList.add("has-image");
+  uploadZone.classList.add("has-image");
   fileName.textContent = file.name;
+}
+
+function setFileList(files) {
+  if (!files?.length) return;
+  fileInput.files = files;
+  setPreview(files[0]);
 }
 
 fileInput.addEventListener("change", () => {
   setPreview(fileInput.files[0]);
+});
+
+uploadZone.addEventListener("dragover", (event) => {
+  event.preventDefault();
+  uploadZone.classList.add("dragging");
+});
+
+uploadZone.addEventListener("dragleave", () => {
+  uploadZone.classList.remove("dragging");
+});
+
+uploadZone.addEventListener("drop", (event) => {
+  event.preventDefault();
+  uploadZone.classList.remove("dragging");
+  setFileList(event.dataTransfer.files);
 });
 
 form.addEventListener("change", updateMode);

@@ -4,36 +4,41 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>AI 水印处理工具</title>
-    <link rel="stylesheet" href="/static/styles.css" />
+    <link rel="stylesheet" href="styles.css" />
   </head>
   <body>
-    <main class="shell">
-      <section class="app-frame">
-        <aside class="brand-panel" aria-label="工具状态">
-          <div>
-            <p class="eyebrow">CPU Image Lab</p>
-            <h1>AI 水印处理工具</h1>
-          </div>
+    <main class="page-shell">
+      <nav class="nav">
+        <a class="brand" href="#tool" aria-label="AI 水印处理工具">
+          <span class="brand-mark" aria-hidden="true"></span>
+          <span>CleanMark</span>
+        </a>
+        <div class="nav-links" aria-label="页面导航">
+          <a href="#tool">工具</a>
+          <a href="#workflow">流程</a>
+          <a href="#notes">说明</a>
+        </div>
+      </nav>
 
-          <div class="preview" id="preview">
-            <div class="preview-empty">
-              <span class="preview-mark"></span>
-              <strong>等待图片</strong>
-            </div>
-            <img id="preview-image" alt="待处理图片预览" />
+      <section class="hero" id="tool">
+        <div class="hero-copy">
+          <p class="eyebrow">AI Image Cleanup</p>
+          <h1>AI 水印处理工具</h1>
+          <p class="lead">上传图片，清理可见 AI 标记、生成元数据，或擦除你指定的区域。适合部署到自己的服务器，通过 Cloudflare 对外访问。</p>
+          <div class="trust-row" aria-label="工具能力">
+            <span>PNG / JPG / WEBP</span>
+            <span>CPU 友好</span>
+            <span>一键下载</span>
           </div>
-
-          <div class="meta-grid">
-            <span>Visible</span>
-            <span>Metadata</span>
-            <span>Erase</span>
+          <div class="showcase">
+            <img src="watermark-preview.png" alt="水印清理前后对比示意图" />
           </div>
-        </aside>
+        </div>
 
-        <form id="tool-form" class="control-panel">
-          <div class="topbar">
+        <form id="tool-form" class="tool-card">
+          <div class="tool-head">
             <div>
-              <p class="section-kicker">处理任务</p>
+              <p class="section-kicker">在线处理</p>
               <h2 id="mode-title">已知可见水印</h2>
             </div>
             <span class="status-pill" id="status-pill">Ready</span>
@@ -43,32 +48,33 @@
             <input id="file" name="file" type="file" accept="image/png,image/jpeg,image/webp,image/bmp,image/tiff" required />
             <span class="upload-icon" aria-hidden="true"></span>
             <span class="upload-copy">
-              <strong>选择图片</strong>
-              <em id="file-name">PNG、JPG、WEBP、BMP、TIFF</em>
+              <strong>拖入或选择图片</strong>
+              <em id="file-name">支持 PNG、JPG、WEBP、BMP、TIFF</em>
             </span>
+            <img id="preview-image" alt="待处理图片预览" />
           </label>
 
           <fieldset class="mode-grid">
-            <legend>处理方式</legend>
+            <legend>选择处理方式</legend>
             <label class="mode-card">
               <input type="radio" name="operation" value="visible" checked />
               <span class="mode-body">
                 <strong>可见水印</strong>
-                <small>Gemini / 豆包 / 即梦</small>
+                <small>自动识别 Gemini、豆包、即梦等常见标记。</small>
               </span>
             </label>
             <label class="mode-card">
               <input type="radio" name="operation" value="metadata" />
               <span class="mode-body">
-                <strong>元数据</strong>
-                <small>C2PA / EXIF / XMP</small>
+                <strong>元数据清理</strong>
+                <small>移除 C2PA、EXIF、XMP 等 AI 来源信息。</small>
               </span>
             </label>
             <label class="mode-card">
               <input type="radio" name="operation" value="erase" />
               <span class="mode-body">
                 <strong>区域擦除</strong>
-                <small>x,y,w,h</small>
+                <small>用 x,y,w,h 手动指定要擦除的矩形区域。</small>
               </span>
             </label>
           </fieldset>
@@ -86,7 +92,7 @@
 
           <label class="field hidden" id="regions-field">
             <span>区域坐标</span>
-            <textarea name="regions" rows="4" placeholder="1640,1930,400,100"></textarea>
+            <textarea name="regions" rows="4" placeholder="示例：1640,1930,400,100"></textarea>
           </label>
 
           <label class="terms">
@@ -94,17 +100,41 @@
             <span>我确认仅处理自己有权处理的内容，并自行遵守适用法律与平台规则。</span>
           </label>
 
-          <div class="action-row">
-            <button id="submit" type="submit">
-              <span class="button-icon" aria-hidden="true"></span>
-              <span>开始处理</span>
-            </button>
-          </div>
+          <button id="submit" type="submit">
+            <span class="button-icon" aria-hidden="true"></span>
+            <span>开始处理</span>
+          </button>
 
           <section id="result" class="result" aria-live="polite"></section>
         </form>
       </section>
+
+      <section class="workflow" id="workflow">
+        <article>
+          <span>01</span>
+          <h3>上传图片</h3>
+          <p>选择待处理图片，页面会立即显示预览，便于确认文件。</p>
+        </article>
+        <article>
+          <span>02</span>
+          <h3>选择模式</h3>
+          <p>可处理已知可见水印、AI 元数据，或手动擦除指定区域。</p>
+        </article>
+        <article>
+          <span>03</span>
+          <h3>下载结果</h3>
+          <p>处理完成后直接下载清理后的图片，原始接口保持不变。</p>
+        </article>
+      </section>
+
+      <section class="notes" id="notes">
+        <div>
+          <p class="eyebrow">Deployment Ready</p>
+          <h2>为自托管准备</h2>
+        </div>
+        <p>当前版本默认走 CPU 友好路径，不启用需要 GPU 的扩散重生成。公开部署时建议继续放在 Cloudflare 后面，并按你的访问量配置限流。</p>
+      </section>
     </main>
-    <script src="/static/app.js"></script>
+    <script src="app.js"></script>
   </body>
 </html>
