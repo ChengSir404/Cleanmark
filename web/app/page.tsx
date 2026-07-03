@@ -1,6 +1,6 @@
 "use client";
 
-import { ChangeEvent, DragEvent, FormEvent, useMemo, useRef, useState } from "react";
+import { ChangeEvent, DragEvent, FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import { Archive, CheckCircle2, Download, FileImage, Layers3, Loader2, ShieldCheck, Sparkles, Upload } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
@@ -75,6 +75,12 @@ export default function Page() {
     return URL.createObjectURL(files[0]);
   }, [files]);
 
+  useEffect(() => {
+    return () => {
+      if (previewUrl) URL.revokeObjectURL(previewUrl);
+    };
+  }, [previewUrl]);
+
   function setSelectedFiles(fileList: FileList | null) {
     if (!fileList?.length) return;
     setFiles(Array.from(fileList));
@@ -133,6 +139,7 @@ export default function Page() {
       ? `${files[0].name} 等 ${files.length} 张图片`
       : files[0].name
     : "支持批量上传 PNG、JPG、WEBP、BMP、TIFF";
+  const selectedOperation = operations.find((item) => item.value === operation);
 
   return (
     <main className="min-h-screen overflow-hidden px-4 py-5 sm:px-6 lg:px-8">
@@ -192,153 +199,202 @@ export default function Page() {
           </div>
         </Card>
 
-        <Card className="mx-auto mt-8 w-full max-w-3xl border-slate-200 bg-white/95 shadow-lg shadow-slate-200/60 backdrop-blur-xl">
-          <CardHeader className="flex flex-row items-start justify-between gap-6 pb-4">
-            <div className="space-y-2">
-              <CardDescription className="font-semibold text-emerald-600">在线处理</CardDescription>
-              <CardTitle>{modeTitle[operation]}</CardTitle>
-            </div>
-            <Badge className={cn(status === "Error" && "border-red-100 bg-red-50 text-red-700", status === "Done" && "border-emerald-100 bg-emerald-50 text-emerald-700")}>
-              {status}
-            </Badge>
-          </CardHeader>
-          <CardContent>
-            <form className="space-y-5" onSubmit={onSubmit}>
-              <Label
-                className={cn(
-                  "block cursor-pointer rounded-lg border border-dashed border-sky-200 bg-white p-4 transition hover:border-sky-400 hover:bg-sky-50/40",
-                  dragging && "border-sky-500 bg-sky-50",
-                )}
-                onDragLeave={() => setDragging(false)}
-                onDragOver={(event) => {
-                  event.preventDefault();
-                  setDragging(true);
-                }}
-                onDrop={onDrop}
-              >
-                <input
-                  ref={inputRef}
-                  className="sr-only"
-                  name="file"
-                  type="file"
-                  accept="image/png,image/jpeg,image/webp,image/bmp,image/tiff"
-                  multiple
-                  required
-                  onChange={onFileChange}
-                />
-                {previewUrl ? (
-                  <span className="mb-4 block overflow-hidden rounded-md bg-slate-950">
-                    <img className="aspect-video w-full object-contain" src={previewUrl} alt="待处理图片预览" />
-                  </span>
-                ) : null}
-                <span className="flex items-center gap-4">
-                  <span className="grid h-11 w-11 shrink-0 place-items-center rounded-lg bg-sky-50 text-sky-600">
-                    <Upload className="h-5 w-5" />
-                  </span>
-                  <span className="grid gap-1">
-                    <span className="text-base font-semibold text-slate-950">拖入或选择图片</span>
-                    <span className="text-sm font-normal text-slate-500">{fileSummary}</span>
-                  </span>
-                </span>
-              </Label>
-
+        <Card className="mx-auto mt-8 w-full max-w-5xl overflow-hidden border-slate-200 bg-white/95 shadow-xl shadow-slate-200/70 backdrop-blur-xl">
+          <CardHeader className="border-b border-slate-100 px-5 py-5 sm:px-6">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
               <div className="space-y-2">
-                <Label>选择处理方式</Label>
-                <div className="grid grid-cols-3 gap-1 rounded-lg border border-slate-200 bg-slate-50 p-1">
-                  {operations.map((item) => {
-                    const Icon = item.icon;
-                    const active = operation === item.value;
-                    return (
-                      <button
-                        key={item.value}
-                        type="button"
-                        className={cn(
-                          "inline-flex h-10 items-center justify-center gap-2 rounded-md px-2 text-sm font-semibold text-slate-500 transition hover:bg-white hover:text-slate-950",
-                          active && "bg-slate-950 text-white shadow-sm hover:bg-slate-950 hover:text-white",
-                        )}
-                        onClick={() => setOperation(item.value)}
-                        aria-pressed={active}
-                      >
-                        <Icon className="h-4 w-4 shrink-0" />
-                        <span>{item.title}</span>
-                      </button>
-                    );
-                  })}
+                <CardDescription className="font-semibold text-emerald-600">在线处理</CardDescription>
+                <CardTitle className="text-2xl tracking-tight">{modeTitle[operation]}</CardTitle>
+              </div>
+              <Badge
+                className={cn(
+                  "w-fit",
+                  status === "Error" && "border-red-100 bg-red-50 text-red-700",
+                  status === "Done" && "border-emerald-100 bg-emerald-50 text-emerald-700",
+                  status === "Working" && "border-sky-100 bg-sky-50 text-sky-700",
+                )}
+              >
+                {status}
+              </Badge>
+            </div>
+          </CardHeader>
+          <CardContent className="p-0">
+            <form onSubmit={onSubmit}>
+              <div className="grid lg:grid-cols-[minmax(0,1.15fr)_minmax(320px,0.85fr)]">
+                <div className="border-b border-slate-100 bg-slate-50/60 p-5 lg:border-b-0 lg:border-r lg:p-6">
+                  <Label
+                    className={cn(
+                      "flex min-h-[360px] cursor-pointer flex-col justify-between rounded-lg border border-dashed border-slate-300 bg-white p-4 transition hover:border-sky-400 hover:bg-sky-50/30",
+                      dragging && "border-sky-500 bg-sky-50",
+                    )}
+                    onDragLeave={() => setDragging(false)}
+                    onDragOver={(event) => {
+                      event.preventDefault();
+                      setDragging(true);
+                    }}
+                    onDrop={onDrop}
+                  >
+                    <input
+                      ref={inputRef}
+                      className="sr-only"
+                      name="file"
+                      type="file"
+                      accept="image/png,image/jpeg,image/webp,image/bmp,image/tiff"
+                      multiple
+                      required
+                      onChange={onFileChange}
+                    />
+                    {previewUrl ? (
+                      <span className="block overflow-hidden rounded-lg bg-slate-950 shadow-sm">
+                        <img className="aspect-[4/3] w-full object-contain" src={previewUrl} alt="待处理图片预览" />
+                      </span>
+                    ) : (
+                      <span className="grid min-h-[220px] place-items-center rounded-lg bg-slate-50">
+                        <span className="grid place-items-center gap-4 text-center">
+                          <span className="grid h-16 w-16 place-items-center rounded-lg bg-white text-sky-600 shadow-sm ring-1 ring-slate-200">
+                            <Upload className="h-7 w-7" />
+                          </span>
+                          <span className="space-y-1">
+                            <span className="block text-lg font-semibold text-slate-950">拖入图片开始处理</span>
+                            <span className="block text-sm font-normal text-slate-500">也可以点击选择，支持一次上传多张</span>
+                          </span>
+                        </span>
+                      </span>
+                    )}
+                    <span className="mt-4 flex items-center justify-between gap-4 rounded-lg border border-slate-200 bg-white px-4 py-3">
+                      <span className="min-w-0">
+                        <span className="block truncate text-sm font-semibold text-slate-950">{fileSummary}</span>
+                        <span className="mt-1 block text-xs font-normal text-slate-500">第一张图片会在这里预览，批量文件会一起提交</span>
+                      </span>
+                      <span className="shrink-0 rounded-md bg-slate-950 px-3 py-2 text-xs font-semibold text-white">
+                        选择图片
+                      </span>
+                    </span>
+                  </Label>
                 </div>
-                <p className="text-xs leading-5 text-slate-500">{operations.find((item) => item.value === operation)?.description}</p>
+
+                <div className="space-y-5 p-5 sm:p-6">
+                  <div className="flex items-start justify-between gap-4">
+                    <div>
+                      <p className="text-sm font-semibold text-slate-950">处理设置</p>
+                      <p className="mt-1 text-xs leading-5 text-slate-500">{selectedOperation?.description}</p>
+                    </div>
+                    {files.length ? <Badge>{files.length} 张</Badge> : null}
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label>选择处理方式</Label>
+                    <div className="grid gap-2">
+                      {operations.map((item) => {
+                        const Icon = item.icon;
+                        const active = operation === item.value;
+                        return (
+                          <button
+                            key={item.value}
+                            type="button"
+                            className={cn(
+                              "flex w-full items-center gap-3 rounded-lg border border-slate-200 bg-white p-3 text-left transition hover:border-slate-300 hover:bg-slate-50",
+                              active && "border-slate-950 bg-slate-950 text-white shadow-sm hover:border-slate-950 hover:bg-slate-950",
+                            )}
+                            onClick={() => setOperation(item.value)}
+                            aria-pressed={active}
+                          >
+                            <span className={cn("grid h-9 w-9 shrink-0 place-items-center rounded-md bg-slate-100 text-slate-600", active && "bg-white/12 text-white")}>
+                              <Icon className="h-4 w-4" />
+                            </span>
+                            <span className="min-w-0 flex-1">
+                              <span className="block text-sm font-semibold">{item.title}</span>
+                              <span className={cn("mt-0.5 block truncate text-xs text-slate-500", active && "text-white/70")}>{item.description}</span>
+                            </span>
+                            {active ? <CheckCircle2 className="h-4 w-4 shrink-0" /> : null}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {operation === "visible" ? (
+                    <div className="space-y-2">
+                      <Label htmlFor="mark">水印类型</Label>
+                      <select
+                        id="mark"
+                        className="h-11 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-950 shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-300"
+                        value={mark}
+                        onChange={(event) => setMark(event.target.value)}
+                      >
+                        <option value="auto">自动识别</option>
+                        <option value="gemini">Gemini / Nano Banana</option>
+                        <option value="doubao">豆包</option>
+                        <option value="jimeng">即梦</option>
+                        <option value="samsung">Samsung Galaxy AI</option>
+                      </select>
+                    </div>
+                  ) : null}
+
+                  {operation === "erase" ? (
+                    <div className="space-y-2">
+                      <Label htmlFor="regions">区域坐标</Label>
+                      <Textarea id="regions" placeholder="示例：1640,1930,400,100" value={regions} onChange={(event) => setRegions(event.target.value)} />
+                    </div>
+                  ) : null}
+
+                  <Label className="flex items-start gap-3 rounded-lg border border-slate-200 bg-slate-50 p-3 text-sm font-normal leading-6 text-slate-600">
+                    <Checkbox checked={accepted} onCheckedChange={(checked) => setAccepted(checked === true)} />
+                    <span>我确认仅处理自己有权处理的内容，并自行遵守适用法律与平台规则。</span>
+                  </Label>
+
+                  <Button className="h-12 w-full bg-slate-950 text-white hover:bg-slate-800" disabled={status === "Working"} type="submit">
+                    {status === "Working" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
+                    {status === "Working" ? "正在处理" : "开始处理"}
+                  </Button>
+
+                  <p className="text-center text-xs text-slate-400">处理缓存会按服务器配置自动清理，默认保留 24 小时。</p>
+                </div>
               </div>
 
-              {operation === "visible" ? (
-                <div className="space-y-2">
-                  <Label htmlFor="mark">水印类型</Label>
-                  <select
-                    id="mark"
-                    className="h-11 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-950 shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-300"
-                    value={mark}
-                    onChange={(event) => setMark(event.target.value)}
-                  >
-                    <option value="auto">自动识别</option>
-                    <option value="gemini">Gemini / Nano Banana</option>
-                    <option value="doubao">豆包</option>
-                    <option value="jimeng">即梦</option>
-                    <option value="samsung">Samsung Galaxy AI</option>
-                  </select>
-                </div>
-              ) : null}
-
-              {operation === "erase" ? (
-                <div className="space-y-2">
-                  <Label htmlFor="regions">区域坐标</Label>
-                  <Textarea id="regions" placeholder="示例：1640,1930,400,100" value={regions} onChange={(event) => setRegions(event.target.value)} />
-                </div>
-              ) : null}
-
-              <Label className="flex items-start gap-3 rounded-lg bg-slate-50 p-4 text-sm font-normal leading-6 text-slate-600">
-                <Checkbox checked={accepted} onCheckedChange={(checked) => setAccepted(checked === true)} />
-                <span>我确认仅处理自己有权处理的内容，并自行遵守适用法律与平台规则。</span>
-              </Label>
-
-              <Button className="h-12 w-full bg-slate-950 text-white hover:bg-slate-800" disabled={status === "Working"} type="submit">
-                {status === "Working" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
-                开始处理
-              </Button>
-
-              <p className="text-center text-xs text-slate-400">处理缓存会按服务器配置自动清理，默认保留 24 小时。</p>
-
-              {message ? (
-                <div className={cn("rounded-lg border p-4 text-sm", status === "Error" ? "border-red-100 bg-red-50 text-red-700" : "border-sky-100 bg-sky-50 text-sky-700")}>
-                  {message}
-                </div>
-              ) : null}
-
-              {result ? (
-                <div className="rounded-lg border border-emerald-100 bg-emerald-50/80 p-4">
-                  <div className="mb-4 flex items-center justify-between gap-4">
-                    <div className="flex items-center gap-2 text-sm font-semibold text-emerald-800">
-                      <CheckCircle2 className="h-4 w-4" />
-                      处理完成，共 {result.count || 1} 张
+              {(message || result) ? (
+                <div className="border-t border-slate-100 bg-white p-5 sm:p-6">
+                  {message ? (
+                    <div className={cn("rounded-lg border p-4 text-sm", status === "Error" ? "border-red-100 bg-red-50 text-red-700" : "border-sky-100 bg-sky-50 text-sky-700")}>
+                      {message}
                     </div>
-                    <Button asChild size="sm" variant="outline">
-                      <a href={result.download_all_url || result.download_url}>
-                        <Archive className="h-4 w-4" />
-                        下载全部
-                      </a>
-                    </Button>
-                  </div>
-                  <ul className="grid gap-2">
-                    {result.files?.map((file) => (
-                      <li key={file.download_url} className="flex items-center justify-between gap-3 rounded-md bg-white/80 px-3 py-2 text-sm">
-                        <span className="flex min-w-0 items-center gap-2 font-medium text-slate-700">
-                          <FileImage className="h-4 w-4 shrink-0 text-slate-400" />
-                          <span className="truncate">{file.original_name || file.name}</span>
-                        </span>
-                        <a className="inline-flex items-center gap-1 font-semibold text-sky-700" href={file.download_url}>
-                          <Download className="h-3.5 w-3.5" />
-                          单独下载
-                        </a>
-                      </li>
-                    ))}
-                  </ul>
+                  ) : null}
+
+                  {result ? (
+                    <div className="rounded-lg border border-emerald-100 bg-emerald-50/80 p-4">
+                      <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                        <div className="flex items-center gap-3 text-sm font-semibold text-emerald-800">
+                          <span className="grid h-9 w-9 place-items-center rounded-md bg-white text-emerald-700 shadow-sm">
+                            <CheckCircle2 className="h-4 w-4" />
+                          </span>
+                          <span>
+                            <span className="block">处理完成，共 {result.count || 1} 张</span>
+                            <span className="mt-0.5 block text-xs font-normal text-emerald-700/70">可以打包下载，也可以逐张保存</span>
+                          </span>
+                        </div>
+                        <Button asChild size="sm" variant="outline">
+                          <a href={result.download_all_url || result.download_url}>
+                            <Archive className="h-4 w-4" />
+                            下载全部
+                          </a>
+                        </Button>
+                      </div>
+                      <ul className="grid gap-2">
+                        {result.files?.map((file) => (
+                          <li key={file.download_url} className="flex items-center justify-between gap-3 rounded-md bg-white px-3 py-2.5 text-sm shadow-sm">
+                            <span className="flex min-w-0 items-center gap-2 font-medium text-slate-700">
+                              <FileImage className="h-4 w-4 shrink-0 text-slate-400" />
+                              <span className="truncate">{file.original_name || file.name}</span>
+                            </span>
+                            <a className="inline-flex shrink-0 items-center gap-1 font-semibold text-sky-700 hover:text-sky-900" href={file.download_url}>
+                              <Download className="h-3.5 w-3.5" />
+                              单独下载
+                            </a>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  ) : null}
                 </div>
               ) : null}
             </form>
