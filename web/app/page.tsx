@@ -52,12 +52,6 @@ const operations: Array<{
   },
 ];
 
-const modeTitle: Record<Operation, string> = {
-  visible: "已知可见水印",
-  metadata: "元数据清理",
-  erase: "指定区域擦除",
-};
-
 export default function Page() {
   const inputRef = useRef<HTMLInputElement>(null);
   const [operation, setOperation] = useState<Operation>("visible");
@@ -164,9 +158,9 @@ export default function Page() {
         <div className="mx-auto max-w-3xl text-center">
           <Badge className="border-sky-100 bg-white/70 text-sky-700">AI Image Cleanup</Badge>
           <div className="mt-6 space-y-5">
-            <h1 className="text-4xl font-semibold tracking-tight text-slate-950 sm:text-5xl lg:text-6xl">批量 AI 水印清理</h1>
+            <h1 className="text-4xl font-semibold tracking-tight text-slate-950 sm:text-5xl lg:text-6xl">CleanMark AI 水印清理工具</h1>
             <p className="mx-auto max-w-2xl text-base leading-7 text-slate-600 sm:text-lg">
-              批量上传图片，清理常见可见 AI 标记、AI 元数据，或擦除指定区域。
+              上传图片，批量清理常见可见 AI 标记、AI 元数据，或擦除指定区域。
             </p>
           </div>
           <div className="mt-6 flex flex-wrap justify-center gap-3">
@@ -176,35 +170,12 @@ export default function Page() {
           </div>
         </div>
 
-        <Card className="mt-10 overflow-hidden border-slate-200 bg-white/80 p-3 shadow-sm">
-          <div className="grid gap-3 md:grid-cols-2">
-            <figure className="overflow-hidden rounded-lg border border-slate-200 bg-white p-2">
-              <figcaption className="mb-2 flex items-center justify-between px-1 text-xs font-medium text-slate-500">
-                <span className="text-slate-950">Before</span>
-                <span>原图完整显示</span>
-              </figcaption>
-              <img className="aspect-video w-full rounded-md bg-slate-950 object-contain" src="sample-before.webp" alt="清理前示例图" />
-            </figure>
-            <figure className="overflow-hidden rounded-lg border border-slate-200 bg-white p-2">
-              <figcaption className="mb-2 flex items-center justify-between px-1 text-xs font-medium text-slate-500">
-                <span className="text-emerald-700">After</span>
-                <span>右下角标识已清理</span>
-              </figcaption>
-              <img className="aspect-video w-full rounded-md bg-slate-950 object-contain" src="sample-after.webp" alt="清理后示例图" />
-            </figure>
-          </div>
-          <div className="flex flex-col gap-1 px-1 py-3 sm:flex-row sm:items-center sm:justify-between">
-            <p className="text-sm font-semibold text-slate-950">真实样图处理</p>
-            <p className="text-sm text-slate-500">右下角标识已清理，画面细节保留。</p>
-          </div>
-        </Card>
-
-        <Card className="mx-auto mt-8 w-full max-w-5xl overflow-hidden border-slate-200 bg-white/95 shadow-xl shadow-slate-200/70 backdrop-blur-xl">
+        <Card className="mx-auto mt-10 w-full max-w-5xl overflow-hidden border-slate-200 bg-white/95 shadow-xl shadow-slate-200/70 backdrop-blur-xl">
           <CardHeader className="border-b border-slate-100 px-5 py-5 sm:px-6">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
               <div className="space-y-2">
                 <CardDescription className="font-semibold text-emerald-600">在线处理</CardDescription>
-                <CardTitle className="text-2xl tracking-tight">{modeTitle[operation]}</CardTitle>
+                <CardTitle className="text-2xl tracking-tight">上传图片开始处理</CardTitle>
               </div>
               <Badge
                 className={cn(
@@ -404,6 +375,34 @@ export default function Page() {
 
       <section id="notes" className="mx-auto mb-10 w-full max-w-6xl rounded-lg border border-amber-200 bg-amber-50/70 p-4 text-sm leading-6 text-amber-900">
         当前版本不处理需要 GPU 扩散重生成的不可见水印；如果图片属于这类水印，页面会保留原图或返回处理失败提示。
+      </section>
+
+      <section className="mx-auto mb-12 w-full max-w-6xl">
+        <div className="mb-4 flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <p className="text-sm font-semibold text-emerald-600">效果示例</p>
+            <h2 className="mt-1 text-2xl font-semibold tracking-tight text-slate-950">原图与清理后对比</h2>
+          </div>
+          <p className="text-sm text-slate-500">右下角标识已清理，画面细节保留。</p>
+        </div>
+        <Card className="overflow-hidden border-slate-200 bg-white/80 p-3 shadow-sm">
+          <div className="grid gap-3 md:grid-cols-2">
+            <figure className="overflow-hidden rounded-lg border border-slate-200 bg-white p-2">
+              <figcaption className="mb-2 flex items-center justify-between px-1 text-xs font-medium text-slate-500">
+                <span className="text-slate-950">Before</span>
+                <span>原图完整显示</span>
+              </figcaption>
+              <img className="aspect-video w-full rounded-md bg-slate-950 object-contain" src="sample-before.webp" alt="清理前示例图" />
+            </figure>
+            <figure className="overflow-hidden rounded-lg border border-slate-200 bg-white p-2">
+              <figcaption className="mb-2 flex items-center justify-between px-1 text-xs font-medium text-slate-500">
+                <span className="text-emerald-700">After</span>
+                <span>AI 标识已清理</span>
+              </figcaption>
+              <img className="aspect-video w-full rounded-md bg-slate-950 object-contain" src="sample-after.webp" alt="清理后示例图" />
+            </figure>
+          </div>
+        </Card>
       </section>
     </main>
   );
