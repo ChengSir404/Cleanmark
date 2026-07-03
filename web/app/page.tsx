@@ -136,9 +136,9 @@ export default function Page() {
 
   return (
     <main className="min-h-screen overflow-hidden px-4 py-5 sm:px-6 lg:px-8">
-      <nav className="mx-auto flex h-16 w-full max-w-6xl items-center justify-between rounded-3xl border border-white/80 bg-white/80 px-4 shadow-sm backdrop-blur-xl">
+      <nav className="mx-auto flex h-14 w-full max-w-6xl items-center justify-between rounded-lg border border-slate-200 bg-white/85 px-4 shadow-sm backdrop-blur-xl">
         <a className="flex items-center gap-3 font-semibold tracking-tight text-slate-950" href="#tool">
-          <span className="grid h-9 w-9 place-items-center rounded-2xl bg-slate-950 text-white shadow-sm">
+          <span className="grid h-8 w-8 place-items-center rounded-lg bg-slate-950 text-white shadow-sm">
             <Sparkles className="h-4 w-4" />
           </span>
           CleanMark
@@ -156,15 +156,15 @@ export default function Page() {
         </div>
       </nav>
 
-      <section id="tool" className="mx-auto grid w-full max-w-6xl gap-12 py-16 lg:grid-cols-[0.92fr_1.08fr] lg:items-center lg:py-20">
-        <div className="space-y-8">
-          <div className="space-y-6">
+      <section id="tool" className="mx-auto grid w-full max-w-6xl gap-10 py-14 lg:grid-cols-[0.92fr_1.08fr] lg:items-center lg:py-18">
+        <div className="space-y-7">
+          <div className="space-y-5">
             <Badge className="border-sky-100 bg-white/70 text-sky-700">AI Image Cleanup</Badge>
             <div className="space-y-5">
-              <h1 className="max-w-2xl text-5xl font-semibold tracking-tight text-slate-950 sm:text-6xl lg:text-6xl">
+              <h1 className="max-w-2xl text-4xl font-semibold tracking-tight text-slate-950 sm:text-5xl lg:text-6xl">
                 批量 AI 水印清理
               </h1>
-              <p className="max-w-xl text-lg leading-8 text-slate-600">
+              <p className="max-w-xl text-base leading-7 text-slate-600 sm:text-lg">
                 面向自托管的极简图片清理工具。批量上传后可清理可见 AI 标记、生成元数据，或擦除指定区域。
               </p>
             </div>
@@ -175,29 +175,31 @@ export default function Page() {
             </div>
           </div>
 
-          <Card className="overflow-hidden border-white/90 bg-white/70 p-3 shadow-xl shadow-slate-200/70">
+          <Card className="overflow-hidden border-slate-200 bg-white/80 p-3 shadow-sm">
             <div className="grid gap-3 sm:grid-cols-2">
-              <figure className="group relative overflow-hidden rounded-2xl bg-slate-950">
-                <img className="aspect-[16/11] h-full w-full object-cover" src="sample-before.webp" alt="清理前示例图" />
-                <figcaption className="absolute left-4 top-4 rounded-full bg-slate-950/70 px-3 py-1 text-xs font-semibold text-white backdrop-blur">
-                  Before
+              <figure className="overflow-hidden rounded-lg border border-slate-200 bg-white p-2">
+                <figcaption className="mb-2 flex items-center justify-between px-1 text-xs font-medium text-slate-500">
+                  <span className="text-slate-950">Before</span>
+                  <span>原图完整显示</span>
                 </figcaption>
+                <img className="aspect-video w-full rounded-md bg-slate-950 object-contain" src="sample-before.webp" alt="清理前示例图" />
               </figure>
-              <figure className="group relative overflow-hidden rounded-2xl bg-slate-950">
-                <img className="aspect-[16/11] h-full w-full object-cover" src="sample-after.webp" alt="清理后示例图" />
-                <figcaption className="absolute left-4 top-4 rounded-full bg-emerald-600/85 px-3 py-1 text-xs font-semibold text-white backdrop-blur">
-                  After
+              <figure className="overflow-hidden rounded-lg border border-slate-200 bg-white p-2">
+                <figcaption className="mb-2 flex items-center justify-between px-1 text-xs font-medium text-slate-500">
+                  <span className="text-emerald-700">After</span>
+                  <span>右下角标识已清理</span>
                 </figcaption>
+                <img className="aspect-video w-full rounded-md bg-slate-950 object-contain" src="sample-after.webp" alt="清理后示例图" />
               </figure>
             </div>
-            <div className="flex flex-col gap-1 px-1 py-4 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex flex-col gap-1 px-1 py-3 sm:flex-row sm:items-center sm:justify-between">
               <p className="text-sm font-semibold text-slate-950">真实样图处理</p>
               <p className="text-sm text-slate-500">右下角标识已清理，画面细节保留。</p>
             </div>
           </Card>
         </div>
 
-        <Card className="border-white/90 bg-white/90 shadow-2xl shadow-slate-200/80 backdrop-blur-xl">
+        <Card className="border-slate-200 bg-white/95 shadow-lg shadow-slate-200/60 backdrop-blur-xl">
           <CardHeader className="flex flex-row items-start justify-between gap-6 pb-4">
             <div className="space-y-2">
               <CardDescription className="font-semibold text-emerald-600">在线处理</CardDescription>
@@ -211,9 +213,8 @@ export default function Page() {
             <form className="space-y-5" onSubmit={onSubmit}>
               <Label
                 className={cn(
-                  "relative flex min-h-36 cursor-pointer items-center gap-4 overflow-hidden rounded-3xl border border-dashed border-sky-200 bg-sky-50/70 p-5 transition hover:border-sky-400 hover:bg-sky-50",
-                  dragging && "border-sky-500 bg-sky-100",
-                  files.length && "min-h-52 items-end",
+                  "block cursor-pointer rounded-lg border border-dashed border-sky-200 bg-white p-4 transition hover:border-sky-400 hover:bg-sky-50/40",
+                  dragging && "border-sky-500 bg-sky-50",
                 )}
                 onDragLeave={() => setDragging(false)}
                 onDragOver={(event) => {
@@ -233,25 +234,24 @@ export default function Page() {
                   onChange={onFileChange}
                 />
                 {previewUrl ? (
-                  <>
-                    <img className="absolute inset-0 h-full w-full object-cover" src={previewUrl} alt="待处理图片预览" />
-                    <span className="absolute inset-0 bg-gradient-to-t from-slate-950/75 via-slate-950/10 to-transparent" />
-                  </>
-                ) : null}
-                {!previewUrl ? (
-                  <span className="grid h-14 w-14 shrink-0 place-items-center rounded-2xl bg-white text-sky-600 shadow-sm">
-                    <Upload className="h-6 w-6" />
+                  <span className="mb-4 block overflow-hidden rounded-md bg-slate-950">
+                    <img className="aspect-video w-full object-contain" src={previewUrl} alt="待处理图片预览" />
                   </span>
                 ) : null}
-                <span className="relative z-10 grid gap-1">
-                  <span className={cn("text-lg font-semibold text-slate-950", previewUrl && "text-white")}>拖入或选择图片</span>
-                  <span className={cn("text-sm font-normal text-slate-500", previewUrl && "text-white/80")}>{fileSummary}</span>
+                <span className="flex items-center gap-4">
+                  <span className="grid h-11 w-11 shrink-0 place-items-center rounded-lg bg-sky-50 text-sky-600">
+                    <Upload className="h-5 w-5" />
+                  </span>
+                  <span className="grid gap-1">
+                    <span className="text-base font-semibold text-slate-950">拖入或选择图片</span>
+                    <span className="text-sm font-normal text-slate-500">{fileSummary}</span>
+                  </span>
                 </span>
               </Label>
 
-              <div className="space-y-3">
+              <div className="space-y-2">
                 <Label>选择处理方式</Label>
-                <div className="grid gap-3 sm:grid-cols-3">
+                <div className="grid grid-cols-3 gap-1 rounded-lg border border-slate-200 bg-slate-50 p-1">
                   {operations.map((item) => {
                     const Icon = item.icon;
                     const active = operation === item.value;
@@ -260,22 +260,18 @@ export default function Page() {
                         key={item.value}
                         type="button"
                         className={cn(
-                          "grid min-h-32 gap-3 rounded-3xl border border-slate-200 bg-white p-4 text-left transition hover:border-sky-200 hover:shadow-sm",
-                          active && "border-sky-300 bg-sky-50 shadow-sm",
+                          "inline-flex h-10 items-center justify-center gap-2 rounded-md px-2 text-sm font-semibold text-slate-500 transition hover:bg-white hover:text-slate-950",
+                          active && "bg-white text-slate-950 shadow-sm",
                         )}
                         onClick={() => setOperation(item.value)}
                       >
-                        <span className="grid h-9 w-9 place-items-center rounded-2xl bg-slate-100 text-slate-600">
-                          <Icon className="h-4 w-4" />
-                        </span>
-                        <span className="grid gap-1">
-                          <span className="font-semibold text-slate-950">{item.title}</span>
-                          <span className="text-sm leading-5 text-slate-500">{item.description}</span>
-                        </span>
+                        <Icon className="h-4 w-4 shrink-0" />
+                        <span>{item.title}</span>
                       </button>
                     );
                   })}
                 </div>
+                <p className="text-xs leading-5 text-slate-500">{operations.find((item) => item.value === operation)?.description}</p>
               </div>
 
               {operation === "visible" ? (
@@ -283,7 +279,7 @@ export default function Page() {
                   <Label htmlFor="mark">水印类型</Label>
                   <select
                     id="mark"
-                    className="h-12 w-full rounded-2xl border border-slate-200 bg-white px-4 text-sm text-slate-950 shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-300"
+                    className="h-11 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-950 shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-300"
                     value={mark}
                     onChange={(event) => setMark(event.target.value)}
                   >
@@ -303,12 +299,12 @@ export default function Page() {
                 </div>
               ) : null}
 
-              <Label className="flex items-start gap-3 rounded-2xl bg-slate-50 p-4 text-sm font-normal leading-6 text-slate-600">
+              <Label className="flex items-start gap-3 rounded-lg bg-slate-50 p-4 text-sm font-normal leading-6 text-slate-600">
                 <Checkbox checked={accepted} onCheckedChange={(checked) => setAccepted(checked === true)} />
                 <span>我确认仅处理自己有权处理的内容，并自行遵守适用法律与平台规则。</span>
               </Label>
 
-              <Button className="h-12 w-full rounded-2xl bg-slate-950 text-white hover:bg-slate-800" disabled={status === "Working"} type="submit">
+              <Button className="h-12 w-full bg-slate-950 text-white hover:bg-slate-800" disabled={status === "Working"} type="submit">
                 {status === "Working" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
                 开始处理
               </Button>
@@ -316,13 +312,13 @@ export default function Page() {
               <p className="text-center text-xs text-slate-400">处理缓存会按服务器配置自动清理，默认保留 24 小时。</p>
 
               {message ? (
-                <div className={cn("rounded-2xl border p-4 text-sm", status === "Error" ? "border-red-100 bg-red-50 text-red-700" : "border-sky-100 bg-sky-50 text-sky-700")}>
+                <div className={cn("rounded-lg border p-4 text-sm", status === "Error" ? "border-red-100 bg-red-50 text-red-700" : "border-sky-100 bg-sky-50 text-sky-700")}>
                   {message}
                 </div>
               ) : null}
 
               {result ? (
-                <div className="rounded-3xl border border-emerald-100 bg-emerald-50/80 p-4">
+                <div className="rounded-lg border border-emerald-100 bg-emerald-50/80 p-4">
                   <div className="mb-4 flex items-center justify-between gap-4">
                     <div className="flex items-center gap-2 text-sm font-semibold text-emerald-800">
                       <CheckCircle2 className="h-4 w-4" />
@@ -337,7 +333,7 @@ export default function Page() {
                   </div>
                   <ul className="grid gap-2">
                     {result.files?.map((file) => (
-                      <li key={file.download_url} className="flex items-center justify-between gap-3 rounded-2xl bg-white/80 px-3 py-2 text-sm">
+                      <li key={file.download_url} className="flex items-center justify-between gap-3 rounded-md bg-white/80 px-3 py-2 text-sm">
                         <span className="flex min-w-0 items-center gap-2 font-medium text-slate-700">
                           <FileImage className="h-4 w-4 shrink-0 text-slate-400" />
                           <span className="truncate">{file.original_name || file.name}</span>
@@ -362,9 +358,9 @@ export default function Page() {
           ["02", "选择模式", "可处理已知可见水印、AI 元数据，或手动擦除指定区域。"],
           ["03", "下载结果", "处理完成后可以下载全部 ZIP，也可以逐张下载。"],
         ].map(([step, title, description]) => (
-          <Card key={step} className="bg-white/75">
+          <Card key={step} className="bg-white/70 shadow-none">
             <CardContent className="space-y-4 p-5">
-              <span className="grid h-9 w-9 place-items-center rounded-2xl bg-slate-950 text-sm font-semibold text-white">{step}</span>
+              <span className="grid h-8 w-8 place-items-center rounded-lg bg-slate-950 text-xs font-semibold text-white">{step}</span>
               <div className="space-y-2">
                 <h3 className="font-semibold text-slate-950">{title}</h3>
                 <p className="text-sm leading-6 text-slate-500">{description}</p>
@@ -374,14 +370,8 @@ export default function Page() {
         ))}
       </section>
 
-      <section id="notes" className="mx-auto mb-10 grid w-full max-w-6xl gap-5 rounded-3xl border border-slate-200 bg-white/75 p-6 shadow-sm sm:grid-cols-[0.8fr_1.2fr] sm:items-center">
-        <div>
-          <Badge className="mb-3 text-sky-700">Deployment Ready</Badge>
-          <h2 className="text-2xl font-semibold tracking-tight text-slate-950">为自托管准备</h2>
-        </div>
-        <p className="text-sm leading-7 text-slate-500">
-          当前版本默认走 CPU 友好路径，不启用需要 GPU 的扩散重生成。公开部署时建议继续放在 Cloudflare 后面，并按访问量配置限流。
-        </p>
+      <section id="notes" className="mx-auto mb-10 w-full max-w-6xl rounded-lg border border-amber-200 bg-amber-50/70 p-4 text-sm leading-6 text-amber-900">
+        当前版本不处理需要 GPU 扩散重生成的不可见水印；如果图片属于这类水印，页面会保留原图或返回处理失败提示。
       </section>
     </main>
   );
