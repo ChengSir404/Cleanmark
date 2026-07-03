@@ -4,8 +4,10 @@
 __pycache__/
 .pytest_cache/
 .ruff_cache/
+web/node_modules/
+web/.next/
+web/out/
 data/jobs/*
 data/tmp/*
 !data/jobs/.gitkeep
 !data/tmp/.gitkeep
-

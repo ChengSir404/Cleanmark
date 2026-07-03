@@ -1,6 +1,6 @@
 # AI 水印处理 Web 工具
 
-这是一个给 `wiltodelta/remove-ai-watermarks` 做的轻量 Web 外壳，适合先部署到普通 CPU 服务器上对外访问。
+这是一个给 `wiltodelta/remove-ai-watermarks` 做的轻量 Web 外壳，适合先部署到普通 CPU 服务器上对外访问。前端使用 Next.js、Tailwind CSS 和 Shadcn UI 风格组件构建，并静态导出给 FastAPI 服务。
 
 ## 功能
 
@@ -15,12 +15,22 @@
 
 ## 本地运行
 
+后端：
+
 ```bash
 uv sync --extra dev
 uv run uvicorn app.main:app --reload
 ```
 
 打开 `http://127.0.0.1:8000`。
+
+前端开发：
+
+```bash
+cd web
+npm install
+npm run dev
+```
 
 ## 服务器部署
 
