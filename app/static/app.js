@@ -41,14 +41,15 @@ function setPreview(file) {
   if (!file) {
     uploadZone.classList.remove("has-image");
     previewImage.removeAttribute("src");
-    fileName.textContent = "支持 PNG、JPG、WEBP、BMP、TIFF";
+    fileName.textContent = "支持批量上传 PNG、JPG、WEBP、BMP、TIFF";
     return;
   }
 
   previewUrl = URL.createObjectURL(file);
   previewImage.src = previewUrl;
   uploadZone.classList.add("has-image");
-  fileName.textContent = file.name;
+  const count = fileInput.files.length;
+  fileName.textContent = count > 1 ? `${file.name} 等 ${count} 张图片` : file.name;
 }
 
 function setFileList(files) {
@@ -81,7 +82,8 @@ form.addEventListener("change", updateMode);
 form.addEventListener("submit", async (event) => {
   event.preventDefault();
   result.className = "result";
-  result.textContent = "处理中，请稍候...";
+  const fileCount = fileInput.files.length;
+  result.textContent = fileCount > 1 ? `正在处理 ${fileCount} 张图片，请稍候...` : "处理中，请稍候...";
   submit.disabled = true;
   setStatus("Working");
 
@@ -94,7 +96,21 @@ form.addEventListener("submit", async (event) => {
     if (!response.ok) {
       throw new Error(body.detail || "处理失败");
     }
-    result.innerHTML = `<p>处理完成</p><a href="${body.download_url}">下载结果</a>`;
+    const fileLinks = Array.isArray(body.files)
+      ? body.files
+          .map(
+            (file) =>
+              `<li><span>${file.original_name || file.name}</span><a href="${file.download_url}">单独下载</a></li>`,
+          )
+          .join("")
+      : "";
+    result.innerHTML = `
+      <p>处理完成，共 ${body.count || 1} 张</p>
+      <div class="download-actions">
+        <a class="download-all" href="${body.download_all_url || body.download_url}">下载全部</a>
+      </div>
+      ${fileLinks ? `<ul class="download-list">${fileLinks}</ul>` : ""}
+    `;
     setStatus("Done");
   } catch (error) {
     result.classList.add("error");

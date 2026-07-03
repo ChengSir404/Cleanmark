@@ -11,7 +11,7 @@
       <nav class="nav">
         <a class="brand" href="#tool" aria-label="AI 水印处理工具">
           <span class="brand-mark" aria-hidden="true"></span>
-          <span>CleanMark</span>
+              <span>CleanMark</span>
         </a>
         <div class="nav-links" aria-label="页面导航">
           <a href="#tool">工具</a>
@@ -24,11 +24,11 @@
         <div class="hero-copy">
           <p class="eyebrow">AI Image Cleanup</p>
           <h1>AI 水印处理工具</h1>
-          <p class="lead">上传图片，清理可见 AI 标记、生成元数据，或擦除你指定的区域。适合部署到自己的服务器，通过 Cloudflare 对外访问。</p>
+          <p class="lead">批量上传图片，清理可见 AI 标记、生成元数据，或擦除你指定的区域。适合部署到自己的服务器，通过 Cloudflare 对外访问。</p>
           <div class="trust-row" aria-label="工具能力">
             <span>PNG / JPG / WEBP</span>
             <span>CPU 友好</span>
-            <span>一键下载</span>
+            <span>批量下载</span>
           </div>
           <div class="showcase">
             <img src="watermark-preview.png" alt="水印清理前后对比示意图" />
@@ -45,11 +45,11 @@
           </div>
 
           <label class="upload" id="upload-zone">
-            <input id="file" name="file" type="file" accept="image/png,image/jpeg,image/webp,image/bmp,image/tiff" required />
+            <input id="file" name="file" type="file" accept="image/png,image/jpeg,image/webp,image/bmp,image/tiff" multiple required />
             <span class="upload-icon" aria-hidden="true"></span>
             <span class="upload-copy">
               <strong>拖入或选择图片</strong>
-              <em id="file-name">支持 PNG、JPG、WEBP、BMP、TIFF</em>
+              <em id="file-name">支持批量上传 PNG、JPG、WEBP、BMP、TIFF</em>
             </span>
             <img id="preview-image" alt="待处理图片预览" />
           </label>
@@ -105,6 +105,8 @@
             <span>开始处理</span>
           </button>
 
+          <p class="cache-note">处理缓存会按服务器配置自动清理，默认保留 24 小时。</p>
+
           <section id="result" class="result" aria-live="polite"></section>
         </form>
       </section>
@@ -113,7 +115,7 @@
         <article>
           <span>01</span>
           <h3>上传图片</h3>
-          <p>选择待处理图片，页面会立即显示预览，便于确认文件。</p>
+          <p>选择一张或多张待处理图片，页面会显示第一张预览和文件数量。</p>
         </article>
         <article>
           <span>02</span>
@@ -123,7 +125,7 @@
         <article>
           <span>03</span>
           <h3>下载结果</h3>
-          <p>处理完成后直接下载清理后的图片，原始接口保持不变。</p>
+          <p>处理完成后可以下载全部 ZIP，也可以逐张下载。</p>
         </article>
       </section>
 

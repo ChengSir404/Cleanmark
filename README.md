@@ -8,6 +8,8 @@
 - AI 相关元数据清理：C2PA、EXIF、XMP 等
 - 指定区域擦除：输入 `x,y,w,h` 坐标
 - 上传大小限制、处理超时、基础健康检查
+- 批量上传，支持逐张下载和全部打包下载
+- 处理缓存按 TTL 自动清理，默认保留 24 小时
 
 当前默认不开放 SynthID / 不可见水印扩散重生成，因为那一路通常需要 GPU、大模型和队列控制。
 
@@ -42,6 +44,7 @@ cp .env.example .env
 CLOUDFLARE_TUNNEL_TOKEN=你的 Tunnel token
 MAX_UPLOAD_MB=20
 PROCESS_TIMEOUT_SECONDS=120
+CACHE_TTL_HOURS=24
 ```
 
 4. 启动：

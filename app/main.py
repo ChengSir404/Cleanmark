@@ -4,7 +4,9 @@ import os
 import re
 import shutil
 import subprocess
+import time
 import uuid
+import zipfile
 from pathlib import Path
 from typing import Annotated, Literal
 
@@ -37,6 +39,30 @@ def get_process_timeout() -> int:
     return int(os.environ.get("PROCESS_TIMEOUT_SECONDS", "120"))
 
 
+def get_cache_ttl_seconds() -> int:
+    hours = int(os.environ.get("CACHE_TTL_HOURS", "24"))
+    return max(hours, 1) * 60 * 60
+
+
+def cleanup_expired_jobs() -> int:
+    root = get_job_root()
+    if not root.exists():
+        return 0
+
+    cutoff = time.time() - get_cache_ttl_seconds()
+    removed = 0
+    for child in root.iterdir():
+        if not child.is_dir():
+            continue
+        try:
+            if child.stat().st_mtime < cutoff:
+                shutil.rmtree(child, ignore_errors=True)
+                removed += 1
+        except OSError:
+            continue
+    return removed
+
+
 def safe_extension(filename: str) -> str:
     extension = Path(filename).suffix.lower()
     if extension not in ALLOWED_EXTENSIONS:
@@ -53,6 +79,12 @@ def parse_regions(raw_regions: str | None) -> list[str]:
     if invalid:
         raise HTTPException(status_code=400, detail="Region must use x,y,w,h format, for example 1640,1930,400,100.")
     return [re.sub(r"\s+", "", region) for region in regions]
+
+
+def safe_stem(filename: str, fallback: str) -> str:
+    stem = Path(filename).stem.lower()
+    stem = re.sub(r"[^a-z0-9._-]+", "-", stem).strip(".-")
+    return stem[:60] or fallback
 
 
 def build_command(operation: str, input_path: Path, output_path: Path, mark: str, regions: list[str]) -> list[str]:
@@ -122,42 +154,62 @@ def health() -> dict[str, str]:
 
 @app.post("/api/process")
 async def process_image(
-    file: Annotated[UploadFile, File()],
+    files: Annotated[list[UploadFile], File(alias="file")],
     operation: Annotated[Literal["visible", "metadata", "erase"], Form()],
     accept_terms: Annotated[bool, Form()] = False,
     mark: Annotated[str, Form()] = "auto",
     regions: Annotated[str | None, Form()] = None,
-) -> dict[str, str]:
+) -> dict[str, object]:
     if not accept_terms:
         raise HTTPException(status_code=400, detail="Confirm lawful use before processing.")
 
-    extension = safe_extension(file.filename or "")
+    if not files:
+        raise HTTPException(status_code=400, detail="Upload at least one image.")
+
+    cleanup_expired_jobs()
+
     job_id = uuid.uuid4().hex
     job_dir = get_job_root() / job_id
     job_dir.mkdir(parents=True, exist_ok=True)
-
-    input_path = job_dir / f"input{extension}"
-    output_path = job_dir / f"clean{extension}"
+    parsed_regions = parse_regions(regions)
+    processed_files: list[dict[str, str]] = []
+    logs: list[str] = []
 
     try:
-        await store_upload(file, input_path)
-        parsed_regions = parse_regions(regions)
-        command = build_command(operation, input_path, output_path, mark, parsed_regions)
-        log = run_watermark_command(command, get_process_timeout())
-    except Exception:
-        if job_dir.exists():
-            shutil.rmtree(job_dir, ignore_errors=True)
-        raise
+        for index, upload in enumerate(files, start=1):
+            extension = safe_extension(upload.filename or "")
+            stem = safe_stem(upload.filename or "", f"image-{index}")
+            input_path = job_dir / f"input-{index:03d}-{stem}{extension}"
+            output_name = f"clean-{index:03d}-{stem}{extension}"
+            output_path = job_dir / output_name
 
-    if not output_path.exists():
+            await store_upload(upload, input_path)
+            command = build_command(operation, input_path, output_path, mark, parsed_regions)
+            log = run_watermark_command(command, get_process_timeout())
+            logs.append(log)
+
+            if not output_path.exists():
+                raise HTTPException(status_code=500, detail="Processing finished without an output file.")
+
+            processed_files.append(
+                {
+                    "name": output_name,
+                    "original_name": upload.filename or input_path.name,
+                    "download_url": f"/api/download/{job_id}/{output_name}",
+                }
+            )
+    except Exception:
         shutil.rmtree(job_dir, ignore_errors=True)
-        raise HTTPException(status_code=500, detail="Processing finished without an output file.")
+        raise
 
     return {
         "job_id": job_id,
         "operation": operation,
         "download_url": f"/api/download/{job_id}",
-        "log": log,
+        "download_all_url": f"/api/download/{job_id}",
+        "count": len(processed_files),
+        "files": processed_files,
+        "log": "\n".join(log for log in logs if log),
     }
 
 
@@ -169,6 +221,29 @@ def download(job_id: str) -> FileResponse:
     job_dir = get_job_root() / job_id
     matches = list(job_dir.glob("clean.*"))
     if not matches:
+        matches = sorted(job_dir.glob("clean-*"))
+    if not matches:
         raise HTTPException(status_code=404, detail="Result not found.")
 
+    if len(matches) > 1:
+        archive_path = job_dir / "cleanmark-results.zip"
+        with zipfile.ZipFile(archive_path, "w", compression=zipfile.ZIP_DEFLATED) as archive:
+            for output_path in matches:
+                archive.write(output_path, arcname=output_path.name)
+        return FileResponse(archive_path, filename="cleanmark-results.zip", media_type="application/zip")
+
     return FileResponse(matches[0], filename=f"clean{matches[0].suffix}", media_type="application/octet-stream")
+
+
+@app.get("/api/download/{job_id}/{filename}")
+def download_file(job_id: str, filename: str) -> FileResponse:
+    if not re.fullmatch(r"[a-f0-9]{32}", job_id):
+        raise HTTPException(status_code=404, detail="Result not found.")
+    if "/" in filename or "\\" in filename or not filename.startswith("clean-"):
+        raise HTTPException(status_code=404, detail="Result not found.")
+
+    path = get_job_root() / job_id / filename
+    if not path.exists() or not path.is_file():
+        raise HTTPException(status_code=404, detail="Result not found.")
+
+    return FileResponse(path, filename=filename, media_type="application/octet-stream")

@@ -6,6 +6,7 @@ services:
       JOB_ROOT: /data/jobs
       MAX_UPLOAD_MB: ${MAX_UPLOAD_MB:-20}
       PROCESS_TIMEOUT_SECONDS: ${PROCESS_TIMEOUT_SECONDS:-120}
+      CACHE_TTL_HOURS: ${CACHE_TTL_HOURS:-24}
     volumes:
       - jobs:/data/jobs
     expose:
