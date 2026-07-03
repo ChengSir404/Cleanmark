@@ -1,0 +1,33 @@
+services:
+  web:
+    build: .
+    restart: unless-stopped
+    environment:
+      JOB_ROOT: /data/jobs
+      MAX_UPLOAD_MB: ${MAX_UPLOAD_MB:-20}
+      PROCESS_TIMEOUT_SECONDS: ${PROCESS_TIMEOUT_SECONDS:-120}
+    volumes:
+      - jobs:/data/jobs
+    expose:
+      - "8000"
+
+  caddy:
+    image: caddy:2.8-alpine
+    restart: unless-stopped
+    depends_on:
+      - web
+    environment:
+      PUBLIC_DOMAIN: ${PUBLIC_DOMAIN:-localhost}
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+
+volumes:
+  jobs:
+  caddy_data:
+  caddy_config:
+

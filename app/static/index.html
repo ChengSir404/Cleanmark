@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>AI 水印处理工具</title>
+    <link rel="stylesheet" href="/static/styles.css" />
+  </head>
+  <body>
+    <main class="shell">
+      <section class="workspace">
+        <div class="intro">
+          <p class="eyebrow">CPU 版 · 图片处理</p>
+          <h1>AI 水印处理工具</h1>
+          <p>上传你有权处理的图片，选择可见水印、元数据或指定区域擦除，完成后下载结果。</p>
+        </div>
+
+        <form id="tool-form" class="panel">
+          <label class="upload">
+            <input id="file" name="file" type="file" accept="image/png,image/jpeg,image/webp,image/bmp,image/tiff" required />
+            <span>选择图片</span>
+            <strong id="file-name">未选择文件</strong>
+          </label>
+
+          <fieldset class="field">
+            <legend>处理方式</legend>
+            <label><input type="radio" name="operation" value="visible" checked /> 已知可见水印</label>
+            <label><input type="radio" name="operation" value="metadata" /> 元数据清理</label>
+            <label><input type="radio" name="operation" value="erase" /> 指定区域擦除</label>
+          </fieldset>
+
+          <label class="field" id="mark-field">
+            <span>可见水印类型</span>
+            <select name="mark">
+              <option value="auto">自动识别</option>
+              <option value="gemini">Gemini / Nano Banana</option>
+              <option value="doubao">豆包</option>
+              <option value="jimeng">即梦</option>
+              <option value="samsung">Samsung Galaxy AI</option>
+            </select>
+          </label>
+
+          <label class="field hidden" id="regions-field">
+            <span>区域坐标</span>
+            <textarea name="regions" rows="3" placeholder="x,y,w,h；多块区域可换行"></textarea>
+          </label>
+
+          <label class="terms">
+            <input type="checkbox" name="accept_terms" value="true" required />
+            <span>我确认仅处理自己有权处理的内容，并自行遵守适用法律与平台规则。</span>
+          </label>
+
+          <button id="submit" type="submit">开始处理</button>
+        </form>
+
+        <section id="result" class="result" aria-live="polite"></section>
+      </section>
+    </main>
+    <script src="/static/app.js"></script>
+  </body>
+</html>
+

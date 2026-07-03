@@ -1,0 +1,10 @@
+{$PUBLIC_DOMAIN} {
+    encode zstd gzip
+
+    request_body {
+        max_size {$MAX_UPLOAD_MB:20}MB
+    }
+
+    reverse_proxy web:8000
+}
+
