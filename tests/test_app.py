@@ -5,11 +5,21 @@ import time
 import zipfile
 
 from fastapi.testclient import TestClient
+from PIL import Image
+import pytest
 
-from app.main import app, cleanup_expired_jobs
+from app.main import app, cleanup_expired_jobs, run_watermark_command
 
 
 client = TestClient(app)
+
+
+def image_bytes(fmt: str = "PNG") -> bytes:
+    from io import BytesIO
+
+    buffer = BytesIO()
+    Image.new("RGB", (2, 2), color=(255, 255, 255)).save(buffer, format=fmt)
+    return buffer.getvalue()
 
 
 def test_health_endpoint_reports_ok() -> None:
@@ -23,7 +33,7 @@ def test_process_requires_terms_acceptance() -> None:
     response = client.post(
         "/api/process",
         data={"operation": "metadata", "accept_terms": "false"},
-        files={"file": ("sample.png", b"not-an-image", "image/png")},
+        files={"file": ("sample.png", image_bytes(), "image/png")},
     )
 
     assert response.status_code == 400
@@ -54,7 +64,7 @@ def test_metadata_process_returns_download_url(monkeypatch, tmp_path: Path) -> N
     response = client.post(
         "/api/process",
         data={"operation": "metadata", "accept_terms": "true"},
-        files={"file": ("sample.png", b"fake-png", "image/png")},
+        files={"file": ("sample.png", image_bytes(), "image/png")},
     )
 
     assert response.status_code == 200
@@ -79,8 +89,8 @@ def test_batch_metadata_process_returns_individual_and_zip_downloads(monkeypatch
         "/api/process",
         data={"operation": "metadata", "accept_terms": "true"},
         files=[
-            ("file", ("first.png", b"fake-png-1", "image/png")),
-            ("file", ("second.jpg", b"fake-jpg-2", "image/jpeg")),
+            ("file", ("first.png", image_bytes(), "image/png")),
+            ("file", ("second.jpg", image_bytes("JPEG"), "image/jpeg")),
         ],
     )
 
@@ -105,11 +115,70 @@ def test_erase_requires_region() -> None:
     response = client.post(
         "/api/process",
         data={"operation": "erase", "accept_terms": "true"},
-        files={"file": ("sample.png", b"fake-png", "image/png")},
+        files={"file": ("sample.png", image_bytes(), "image/png")},
     )
 
     assert response.status_code == 400
     assert "region" in response.json()["detail"].lower()
+
+
+def test_process_rejects_too_many_files(monkeypatch, tmp_path: Path) -> None:
+    monkeypatch.setenv("JOB_ROOT", str(tmp_path))
+    monkeypatch.setenv("MAX_FILES", "1")
+
+    response = client.post(
+        "/api/process",
+        data={"operation": "metadata", "accept_terms": "true"},
+        files=[
+            ("file", ("first.png", image_bytes(), "image/png")),
+            ("file", ("second.png", image_bytes(), "image/png")),
+        ],
+    )
+
+    assert response.status_code == 413
+    assert "too many" in response.json()["detail"].lower()
+
+
+def test_process_rejects_invalid_image_content(monkeypatch, tmp_path: Path) -> None:
+    monkeypatch.setenv("JOB_ROOT", str(tmp_path))
+
+    def fail_if_called(command: list[str], timeout: int) -> str:
+        raise AssertionError("invalid image should not reach the processor")
+
+    monkeypatch.setattr("app.main.run_watermark_command", fail_if_called)
+
+    response = client.post(
+        "/api/process",
+        data={"operation": "metadata", "accept_terms": "true"},
+        files={"file": ("sample.png", b"not-an-image", "image/png")},
+    )
+
+    assert response.status_code == 400
+    assert "valid image" in response.json()["detail"].lower()
+
+
+def test_process_rejects_total_upload_limit(monkeypatch, tmp_path: Path) -> None:
+    monkeypatch.setenv("JOB_ROOT", str(tmp_path))
+    monkeypatch.setenv("MAX_TOTAL_UPLOAD_MB", "0")
+
+    response = client.post(
+        "/api/process",
+        data={"operation": "metadata", "accept_terms": "true"},
+        files={"file": ("sample.png", image_bytes(), "image/png")},
+    )
+
+    assert response.status_code == 413
+    assert "total upload" in response.json()["detail"].lower()
+
+
+def test_cli_errors_do_not_leak_internal_stderr() -> None:
+    with pytest.raises(Exception) as exc_info:
+        run_watermark_command(
+            ["python", "-c", "import sys; sys.stderr.write('/tmp/secret-path'); sys.exit(1)"],
+            timeout=5,
+        )
+
+    assert "/tmp/secret-path" not in str(exc_info.value)
 
 
 def test_cleanup_expired_jobs_removes_old_directories(monkeypatch, tmp_path: Path) -> None:

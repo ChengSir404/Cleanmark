@@ -52,7 +52,11 @@ cp .env.example .env
 
 ```bash
 CLOUDFLARE_TUNNEL_TOKEN=你的 Tunnel token
+CLEANMARK_IMAGE=ghcr.io/chengsir404/cleanmark:latest
+MAX_FILES=10
 MAX_UPLOAD_MB=20
+MAX_TOTAL_UPLOAD_MB=100
+MAX_IMAGE_PIXELS=50000000
 PROCESS_TIMEOUT_SECONDS=120
 CACHE_TTL_HOURS=24
 ```
@@ -60,7 +64,8 @@ CACHE_TTL_HOURS=24
 4. 启动：
 
 ```bash
-docker compose --profile tunnel up -d --build
+docker compose --profile tunnel pull
+docker compose --profile tunnel up -d
 ```
 
 Cloudflare 会处理公网入口、HTTPS 和域名绑定。
@@ -68,8 +73,15 @@ Cloudflare 会处理公网入口、HTTPS 和域名绑定。
 如果你只想先在服务器本机测试容器，不走 Tunnel，可以临时执行：
 
 ```bash
-docker compose up -d --build web
+docker compose pull web
+docker compose up -d web
 docker compose exec web python -c "import urllib.request; print(urllib.request.urlopen('http://127.0.0.1:8000/health').read().decode())"
+```
+
+每次代码推送到 GitHub 的 `main` 分支后，GitHub Actions 会自动构建并发布镜像到：
+
+```text
+ghcr.io/chengsir404/cleanmark:latest
 ```
 
 ## 运维
@@ -79,7 +91,7 @@ docker compose logs -f
 docker compose ps
 docker compose down
 docker compose pull
-docker compose --profile tunnel up -d --build
+docker compose --profile tunnel up -d
 ```
 
 处理结果保存在 Docker volume `jobs` 中。需要定期清理时可以进入服务器执行：

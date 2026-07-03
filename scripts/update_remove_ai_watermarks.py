@@ -3,7 +3,8 @@ from __future__ import annotations
 import argparse
 import json
 import re
-import subprocess
+# Commands are fixed maintenance argv lists.
+import subprocess  # nosec B404
 import sys
 import urllib.request
 from pathlib import Path
@@ -15,7 +16,7 @@ PIN_RE = re.compile(r"(remove-ai-watermarks==)([0-9][A-Za-z0-9.!+-]*)")
 
 
 def run(command: list[str], cwd: Path = ROOT, check: bool = True) -> subprocess.CompletedProcess[str]:
-    return subprocess.run(command, cwd=cwd, check=check, text=True, capture_output=True)
+    return subprocess.run(command, cwd=cwd, check=check, text=True, capture_output=True)  # nosec B603
 
 
 def pinned_versions(root: Path) -> dict[Path, str]:
@@ -55,7 +56,7 @@ def is_newer(candidate: str, current: str) -> bool:
 
 
 def latest_pypi_version() -> str:
-    with urllib.request.urlopen(f"https://pypi.org/pypi/{PACKAGE}/json", timeout=30) as response:
+    with urllib.request.urlopen(f"https://pypi.org/pypi/{PACKAGE}/json", timeout=30) as response:  # nosec B310
         payload = json.loads(response.read().decode("utf-8"))
     version = payload.get("info", {}).get("version")
     if not isinstance(version, str) or not version:
@@ -124,4 +125,3 @@ def main() -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
-

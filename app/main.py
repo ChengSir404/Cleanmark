@@ -3,16 +3,20 @@ from __future__ import annotations
 import os
 import re
 import shutil
-import subprocess
+# Commands are built as argv lists with validated user parameters.
+import subprocess  # nosec B404
 import time
 import uuid
 import zipfile
+import logging
 from pathlib import Path
 from typing import Annotated, Literal
 
 from fastapi import FastAPI, File, Form, HTTPException, UploadFile
 from fastapi.responses import FileResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
+from PIL import Image, UnidentifiedImageError
+from PIL.Image import DecompressionBombError
 
 
 BASE_DIR = Path(__file__).resolve().parent
@@ -20,7 +24,17 @@ STATIC_DIR = BASE_DIR / "static"
 DEFAULT_JOB_ROOT = BASE_DIR.parent / "data" / "jobs"
 ALLOWED_EXTENSIONS = {".png", ".jpg", ".jpeg", ".webp", ".bmp", ".tif", ".tiff"}
 ALLOWED_MARKS = {"auto", "gemini", "doubao", "jimeng", "samsung"}
+IMAGE_FORMATS_BY_EXTENSION = {
+    ".png": "PNG",
+    ".jpg": "JPEG",
+    ".jpeg": "JPEG",
+    ".webp": "WEBP",
+    ".bmp": "BMP",
+    ".tif": "TIFF",
+    ".tiff": "TIFF",
+}
 REGION_PATTERN = re.compile(r"^\s*\d+\s*,\s*\d+\s*,\s*\d+\s*,\s*\d+\s*$")
+logger = logging.getLogger(__name__)
 
 app = FastAPI(title="Remove AI Watermarks Web", version="0.1.0")
 app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
@@ -33,6 +47,19 @@ def get_job_root() -> Path:
 def get_max_upload_bytes() -> int:
     mb = int(os.environ.get("MAX_UPLOAD_MB", "20"))
     return mb * 1024 * 1024
+
+
+def get_max_total_upload_bytes() -> int:
+    mb = int(os.environ.get("MAX_TOTAL_UPLOAD_MB", "100"))
+    return max(mb, 0) * 1024 * 1024
+
+
+def get_max_files() -> int:
+    return max(int(os.environ.get("MAX_FILES", "10")), 1)
+
+
+def get_max_image_pixels() -> int:
+    return max(int(os.environ.get("MAX_IMAGE_PIXELS", "50000000")), 1)
 
 
 def get_process_timeout() -> int:
@@ -68,6 +95,20 @@ def safe_extension(filename: str) -> str:
     if extension not in ALLOWED_EXTENSIONS:
         raise HTTPException(status_code=400, detail="Unsupported file type. Upload PNG, JPG, WEBP, BMP, or TIFF.")
     return extension
+
+
+def validate_image_file(path: Path, extension: str) -> None:
+    Image.MAX_IMAGE_PIXELS = get_max_image_pixels()
+    try:
+        with Image.open(path) as image:
+            image.verify()
+            detected = image.format
+    except (UnidentifiedImageError, OSError, DecompressionBombError) as exc:
+        raise HTTPException(status_code=400, detail="Upload a valid image file.") from exc
+
+    expected = IMAGE_FORMATS_BY_EXTENSION[extension]
+    if detected != expected:
+        raise HTTPException(status_code=400, detail="Image content does not match the file extension.")
 
 
 def parse_regions(raw_regions: str | None) -> list[str]:
@@ -109,7 +150,8 @@ def build_command(operation: str, input_path: Path, output_path: Path, mark: str
 
 def run_watermark_command(command: list[str], timeout: int) -> str:
     try:
-        completed = subprocess.run(
+        # The command uses a fixed executable, validated arguments, and shell=False.
+        completed = subprocess.run(  # nosec B603
             command,
             check=True,
             capture_output=True,
@@ -120,14 +162,18 @@ def run_watermark_command(command: list[str], timeout: int) -> str:
         raise HTTPException(status_code=504, detail="Processing timed out. Try a smaller image.") from exc
     except subprocess.CalledProcessError as exc:
         message = "\n".join(part for part in [exc.stdout, exc.stderr] if part).strip()
+        logger.warning("remove-ai-watermarks failed with code %s: %s", exc.returncode, message)
         if exc.returncode == 2:
-            raise HTTPException(status_code=422, detail=message or "No matching watermark was detected.") from exc
-        raise HTTPException(status_code=500, detail=message or "Processing failed.") from exc
+            raise HTTPException(status_code=422, detail="No matching watermark was detected.") from exc
+        raise HTTPException(status_code=500, detail="Processing failed.") from exc
 
-    return "\n".join(part for part in [completed.stdout, completed.stderr] if part).strip()
+    message = "\n".join(part for part in [completed.stdout, completed.stderr] if part).strip()
+    if message:
+        logger.debug("remove-ai-watermarks output: %s", message)
+    return ""
 
 
-async def store_upload(upload: UploadFile, destination: Path) -> None:
+async def store_upload(upload: UploadFile, destination: Path) -> int:
     max_bytes = get_max_upload_bytes()
     total = 0
     with destination.open("wb") as target:
@@ -139,6 +185,7 @@ async def store_upload(upload: UploadFile, destination: Path) -> None:
             if total > max_bytes:
                 raise HTTPException(status_code=413, detail=f"File is too large. Limit is {max_bytes // 1024 // 1024} MB.")
             target.write(chunk)
+    return total
 
 
 @app.get("/", include_in_schema=False)
@@ -165,6 +212,8 @@ async def process_image(
 
     if not files:
         raise HTTPException(status_code=400, detail="Upload at least one image.")
+    if len(files) > get_max_files():
+        raise HTTPException(status_code=413, detail=f"Too many files. Upload at most {get_max_files()} files at a time.")
 
     cleanup_expired_jobs()
 
@@ -174,6 +223,8 @@ async def process_image(
     parsed_regions = parse_regions(regions)
     processed_files: list[dict[str, str]] = []
     logs: list[str] = []
+    total_upload_bytes = 0
+    max_total_upload_bytes = get_max_total_upload_bytes()
 
     try:
         for index, upload in enumerate(files, start=1):
@@ -183,7 +234,10 @@ async def process_image(
             output_name = f"clean-{index:03d}-{stem}{extension}"
             output_path = job_dir / output_name
 
-            await store_upload(upload, input_path)
+            total_upload_bytes += await store_upload(upload, input_path)
+            if total_upload_bytes > max_total_upload_bytes:
+                raise HTTPException(status_code=413, detail=f"Total upload is too large. Limit is {max_total_upload_bytes // 1024 // 1024} MB.")
+            validate_image_file(input_path, extension)
             command = build_command(operation, input_path, output_path, mark, parsed_regions)
             log = run_watermark_command(command, get_process_timeout())
             logs.append(log)

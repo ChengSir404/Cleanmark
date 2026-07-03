@@ -169,31 +169,30 @@ export default function Page() {
           </div>
         </div>
 
-        <div className="mt-12 grid gap-8 lg:grid-cols-[0.9fr_1.1fr] lg:items-start">
-          <Card className="overflow-hidden border-slate-200 bg-white/80 p-3 shadow-sm">
-            <div className="grid gap-3 sm:grid-cols-2">
-              <figure className="overflow-hidden rounded-lg border border-slate-200 bg-white p-2">
-                <figcaption className="mb-2 flex items-center justify-between px-1 text-xs font-medium text-slate-500">
-                  <span className="text-slate-950">Before</span>
-                  <span>原图完整显示</span>
-                </figcaption>
-                <img className="aspect-video w-full rounded-md bg-slate-950 object-contain" src="sample-before.webp" alt="清理前示例图" />
-              </figure>
-              <figure className="overflow-hidden rounded-lg border border-slate-200 bg-white p-2">
-                <figcaption className="mb-2 flex items-center justify-between px-1 text-xs font-medium text-slate-500">
-                  <span className="text-emerald-700">After</span>
-                  <span>右下角标识已清理</span>
-                </figcaption>
-                <img className="aspect-video w-full rounded-md bg-slate-950 object-contain" src="sample-after.webp" alt="清理后示例图" />
-              </figure>
-            </div>
-            <div className="flex flex-col gap-1 px-1 py-3 sm:flex-row sm:items-center sm:justify-between">
-              <p className="text-sm font-semibold text-slate-950">真实样图处理</p>
-              <p className="text-sm text-slate-500">右下角标识已清理，画面细节保留。</p>
-            </div>
-          </Card>
+        <Card className="mt-10 overflow-hidden border-slate-200 bg-white/80 p-3 shadow-sm">
+          <div className="grid gap-3 md:grid-cols-2">
+            <figure className="overflow-hidden rounded-lg border border-slate-200 bg-white p-2">
+              <figcaption className="mb-2 flex items-center justify-between px-1 text-xs font-medium text-slate-500">
+                <span className="text-slate-950">Before</span>
+                <span>原图完整显示</span>
+              </figcaption>
+              <img className="aspect-video w-full rounded-md bg-slate-950 object-contain" src="sample-before.webp" alt="清理前示例图" />
+            </figure>
+            <figure className="overflow-hidden rounded-lg border border-slate-200 bg-white p-2">
+              <figcaption className="mb-2 flex items-center justify-between px-1 text-xs font-medium text-slate-500">
+                <span className="text-emerald-700">After</span>
+                <span>右下角标识已清理</span>
+              </figcaption>
+              <img className="aspect-video w-full rounded-md bg-slate-950 object-contain" src="sample-after.webp" alt="清理后示例图" />
+            </figure>
+          </div>
+          <div className="flex flex-col gap-1 px-1 py-3 sm:flex-row sm:items-center sm:justify-between">
+            <p className="text-sm font-semibold text-slate-950">真实样图处理</p>
+            <p className="text-sm text-slate-500">右下角标识已清理，画面细节保留。</p>
+          </div>
+        </Card>
 
-          <Card className="border-slate-200 bg-white/95 shadow-lg shadow-slate-200/60 backdrop-blur-xl">
+        <Card className="mx-auto mt-8 w-full max-w-3xl border-slate-200 bg-white/95 shadow-lg shadow-slate-200/60 backdrop-blur-xl">
           <CardHeader className="flex flex-row items-start justify-between gap-6 pb-4">
             <div className="space-y-2">
               <CardDescription className="font-semibold text-emerald-600">在线处理</CardDescription>
@@ -344,8 +343,7 @@ export default function Page() {
               ) : null}
             </form>
           </CardContent>
-          </Card>
-        </div>
+        </Card>
       </section>
 
       <section id="notes" className="mx-auto mb-10 w-full max-w-6xl rounded-lg border border-amber-200 bg-amber-50/70 p-4 text-sm leading-6 text-amber-900">
