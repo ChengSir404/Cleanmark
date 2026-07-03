@@ -147,34 +147,29 @@ export default function Page() {
           <a className="rounded-full px-4 py-2 hover:bg-slate-100 hover:text-slate-950" href="#tool">
             工具
           </a>
-          <a className="rounded-full px-4 py-2 hover:bg-slate-100 hover:text-slate-950" href="#workflow">
-            流程
-          </a>
           <a className="rounded-full px-4 py-2 hover:bg-slate-100 hover:text-slate-950" href="#notes">
             说明
           </a>
         </div>
       </nav>
 
-      <section id="tool" className="mx-auto grid w-full max-w-6xl gap-10 py-14 lg:grid-cols-[0.92fr_1.08fr] lg:items-center lg:py-18">
-        <div className="space-y-7">
-          <div className="space-y-5">
-            <Badge className="border-sky-100 bg-white/70 text-sky-700">AI Image Cleanup</Badge>
-            <div className="space-y-5">
-              <h1 className="max-w-2xl text-4xl font-semibold tracking-tight text-slate-950 sm:text-5xl lg:text-6xl">
-                批量 AI 水印清理
-              </h1>
-              <p className="max-w-xl text-base leading-7 text-slate-600 sm:text-lg">
-                面向自托管的极简图片清理工具。批量上传后可清理可见 AI 标记、生成元数据，或擦除指定区域。
-              </p>
-            </div>
-            <div className="flex flex-wrap gap-3">
-              {["PNG / JPG / WEBP", "CPU 友好", "批量 ZIP 下载"].map((item) => (
-                <Badge key={item}>{item}</Badge>
-              ))}
-            </div>
+      <section id="tool" className="mx-auto w-full max-w-6xl py-14 lg:py-16">
+        <div className="mx-auto max-w-3xl text-center">
+          <Badge className="border-sky-100 bg-white/70 text-sky-700">AI Image Cleanup</Badge>
+          <div className="mt-6 space-y-5">
+            <h1 className="text-4xl font-semibold tracking-tight text-slate-950 sm:text-5xl lg:text-6xl">批量 AI 水印清理</h1>
+            <p className="mx-auto max-w-2xl text-base leading-7 text-slate-600 sm:text-lg">
+              批量上传图片，清理常见可见 AI 标记、AI 元数据，或擦除指定区域。
+            </p>
           </div>
+          <div className="mt-6 flex flex-wrap justify-center gap-3">
+            {["PNG / JPG / WEBP", "CPU 友好", "批量 ZIP 下载"].map((item) => (
+              <Badge key={item}>{item}</Badge>
+            ))}
+          </div>
+        </div>
 
+        <div className="mt-12 grid gap-8 lg:grid-cols-[0.9fr_1.1fr] lg:items-start">
           <Card className="overflow-hidden border-slate-200 bg-white/80 p-3 shadow-sm">
             <div className="grid gap-3 sm:grid-cols-2">
               <figure className="overflow-hidden rounded-lg border border-slate-200 bg-white p-2">
@@ -197,9 +192,8 @@ export default function Page() {
               <p className="text-sm text-slate-500">右下角标识已清理，画面细节保留。</p>
             </div>
           </Card>
-        </div>
 
-        <Card className="border-slate-200 bg-white/95 shadow-lg shadow-slate-200/60 backdrop-blur-xl">
+          <Card className="border-slate-200 bg-white/95 shadow-lg shadow-slate-200/60 backdrop-blur-xl">
           <CardHeader className="flex flex-row items-start justify-between gap-6 pb-4">
             <div className="space-y-2">
               <CardDescription className="font-semibold text-emerald-600">在线处理</CardDescription>
@@ -261,9 +255,10 @@ export default function Page() {
                         type="button"
                         className={cn(
                           "inline-flex h-10 items-center justify-center gap-2 rounded-md px-2 text-sm font-semibold text-slate-500 transition hover:bg-white hover:text-slate-950",
-                          active && "bg-white text-slate-950 shadow-sm",
+                          active && "bg-slate-950 text-white shadow-sm hover:bg-slate-950 hover:text-white",
                         )}
                         onClick={() => setOperation(item.value)}
+                        aria-pressed={active}
                       >
                         <Icon className="h-4 w-4 shrink-0" />
                         <span>{item.title}</span>
@@ -349,25 +344,8 @@ export default function Page() {
               ) : null}
             </form>
           </CardContent>
-        </Card>
-      </section>
-
-      <section id="workflow" className="mx-auto grid w-full max-w-6xl gap-4 py-8 sm:grid-cols-3">
-        {[
-          ["01", "上传图片", "选择一张或多张待处理图片，页面会显示第一张预览和文件数量。"],
-          ["02", "选择模式", "可处理已知可见水印、AI 元数据，或手动擦除指定区域。"],
-          ["03", "下载结果", "处理完成后可以下载全部 ZIP，也可以逐张下载。"],
-        ].map(([step, title, description]) => (
-          <Card key={step} className="bg-white/70 shadow-none">
-            <CardContent className="space-y-4 p-5">
-              <span className="grid h-8 w-8 place-items-center rounded-lg bg-slate-950 text-xs font-semibold text-white">{step}</span>
-              <div className="space-y-2">
-                <h3 className="font-semibold text-slate-950">{title}</h3>
-                <p className="text-sm leading-6 text-slate-500">{description}</p>
-              </div>
-            </CardContent>
           </Card>
-        ))}
+        </div>
       </section>
 
       <section id="notes" className="mx-auto mb-10 w-full max-w-6xl rounded-lg border border-amber-200 bg-amber-50/70 p-4 text-sm leading-6 text-amber-900">
