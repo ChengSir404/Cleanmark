@@ -2,7 +2,7 @@
 name = "remove-ai-watermarks-web"
 version = "0.1.0"
 description = "Small FastAPI web wrapper for remove-ai-watermarks CPU workflows."
-requires-python = ">=3.10"
+requires-python = ">=3.11,<3.15"
 dependencies = [
     "fastapi>=0.115,<1",
     "pillow>=12,<13",
@@ -20,3 +20,10 @@ dev = [
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 pythonpath = ["."]
+
+[tool.uv]
+# Require installable Linux wheels when resolving native dependencies.
+# In particular, some c2pa-python releases ship macOS wheels only.
+required-environments = [
+    "sys_platform == 'linux' and platform_machine == 'x86_64'",
+]

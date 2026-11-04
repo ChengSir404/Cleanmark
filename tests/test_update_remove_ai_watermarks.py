@@ -63,3 +63,23 @@ def test_is_newer_compares_release_versions() -> None:
     assert is_newer("0.12.1", "0.12.1") is False
     assert is_newer("0.11.9", "0.12.1") is False
 
+
+
+def test_newer_upstream_installs_visible_extra(tmp_path: Path) -> None:
+    (tmp_path / "requirements.txt").write_text("remove-ai-watermarks==0.12.1\n", encoding="utf-8")
+    (tmp_path / "pyproject.toml").write_text(
+        '[project]\ndependencies = ["remove-ai-watermarks==0.12.1"]\n', encoding="utf-8"
+    )
+    assert update_dependency_files(tmp_path, "0.53.0")
+    for name in ("requirements.txt", "pyproject.toml"):
+        assert "remove-ai-watermarks[visible]==0.53.0" in (tmp_path / name).read_text(encoding="utf-8")
+    assert current_pinned_version(tmp_path) == "0.53.0"
+
+
+def test_updater_reports_subprocess_stderr(tmp_path: Path) -> None:
+    import pytest
+    import sys
+    from scripts.update_remove_ai_watermarks import run
+
+    with pytest.raises(RuntimeError, match="specific diagnostic"):
+        run([sys.executable, "-c", "import sys; sys.stderr.write('specific diagnostic'); sys.exit(2)"], cwd=tmp_path)
