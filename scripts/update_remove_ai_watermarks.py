@@ -12,11 +12,18 @@ from pathlib import Path
 
 PACKAGE = "remove-ai-watermarks"
 ROOT = Path(__file__).resolve().parents[1]
-PIN_RE = re.compile(r"(remove-ai-watermarks==)([0-9][A-Za-z0-9.!+-]*)")
+PIN_RE = re.compile(r"(remove-ai-watermarks(?:\[visible\])?==)([0-9][A-Za-z0-9.!+-]*)")
 
 
 def run(command: list[str], cwd: Path = ROOT, check: bool = True) -> subprocess.CompletedProcess[str]:
-    return subprocess.run(command, cwd=cwd, check=check, text=True, capture_output=True)  # nosec B603
+    result = subprocess.run(command, cwd=cwd, check=False, text=True, capture_output=True)  # nosec B603
+    if check and result.returncode:
+        details = "\n".join(part.strip() for part in (result.stderr, result.stdout) if part).strip()
+        raise RuntimeError(
+            f"Command {command!r} failed (exit {result.returncode}).\n"
+            f"{details[-12000:] if details else 'No error output from the command.'}"
+        )
+    return result
 
 
 def pinned_versions(root: Path) -> dict[Path, str]:
@@ -69,7 +76,10 @@ def update_dependency_files(root: Path, new_version: str) -> bool:
     for relative in (Path("requirements.txt"), Path("pyproject.toml")):
         path = root / relative
         old = path.read_text(encoding="utf-8")
-        new = PIN_RE.sub(rf"\g<1>{new_version}", old)
+        # Pixel-processing dependencies became optional in the upstream package.
+        # Keep our visible and region-erase operations working after upgrading.
+        extra = "[visible]" if version_parts(new_version) >= (0, 23, 0) else ""
+        new = PIN_RE.sub(lambda match: f"{PACKAGE}{extra}=={new_version}", old)
         if new != old:
             path.write_text(new, encoding="utf-8")
             changed = True
@@ -114,6 +124,7 @@ def main() -> int:
         run(["uv", "lock", "--upgrade-package", PACKAGE])
         run(["uv", "sync", "--extra", "dev"])
         run(["uv", "run", "pytest", "-q"])
+        run(["uv", "run", "python", "scripts/smoke_test_remove_ai_watermarks.py"])
         if not args.skip_commit:
             commit_update(latest)
         print(f"Updated {PACKAGE} to {latest}.")
