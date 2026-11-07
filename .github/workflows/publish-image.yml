@@ -16,6 +16,11 @@ permissions:
   contents: read
   packages: write
 
+# Serialize all image publications to prevent stale builds overwriting :latest.
+concurrency:
+  group: cleanmark-image-publish-main
+  cancel-in-progress: false
+
 jobs:
   publish:
     runs-on: ubuntu-latest
