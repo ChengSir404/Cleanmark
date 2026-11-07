@@ -1,5 +1,5 @@
 fastapi>=0.115,<1
 pillow>=12,<13
 python-multipart>=0.0.9
-remove-ai-watermarks[visible]==0.53.0
+remove-ai-watermarks[visible]==0.54.1
 uvicorn[standard]>=0.30,<1
