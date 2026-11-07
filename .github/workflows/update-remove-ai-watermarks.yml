@@ -4,6 +4,12 @@ on:
   schedule:
     - cron: "0 1 * * 1"
   workflow_dispatch:
+  # When the updater itself changes, validate and publish any new upstream release.
+  push:
+    branches:
+      - main
+    paths:
+      - ".github/workflows/update-remove-ai-watermarks.yml"
   pull_request:
     paths:
       - ".github/workflows/update-remove-ai-watermarks.yml"
