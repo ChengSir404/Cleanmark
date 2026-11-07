@@ -9,6 +9,7 @@ import time
 import uuid
 import zipfile
 import logging
+import json
 from pathlib import Path
 from typing import Annotated, Literal
 
@@ -23,7 +24,11 @@ BASE_DIR = Path(__file__).resolve().parent
 STATIC_DIR = BASE_DIR / "static"
 DEFAULT_JOB_ROOT = BASE_DIR.parent / "data" / "jobs"
 ALLOWED_EXTENSIONS = {".png", ".jpg", ".jpeg", ".webp", ".bmp", ".tif", ".tiff"}
-ALLOWED_MARKS = {"auto", "gemini", "doubao", "jimeng", "samsung"}
+ALLOWED_MARKS = {
+    "auto", "gemini", "doubao", "jimeng", "jimeng_pill", "qwen", "wan",
+    "kling", "yuanbao", "dola", "workbuddy", "samsung", "runninghub",
+    "baidu", "liblib", "liblib_pill", "microsoft", "generic_ai_label", "openart",
+}
 IMAGE_FORMATS_BY_EXTENSION = {
     ".png": "PNG",
     ".jpg": "JPEG",
@@ -128,19 +133,26 @@ def safe_stem(filename: str, fallback: str) -> str:
     return stem[:60] or fallback
 
 
-def build_command(operation: str, input_path: Path, output_path: Path, mark: str, regions: list[str]) -> list[str]:
+def build_command(
+    operation: str, input_path: Path, output_path: Path, mark: str, regions: list[str],
+    sensitivity: str = "auto", inpaint_method: str = "telea",
+) -> list[str]:
     if operation == "metadata":
         return ["remove-ai-watermarks", "metadata", str(input_path), "--remove", "-o", str(output_path)]
 
     if operation == "visible":
         if mark not in ALLOWED_MARKS:
             raise HTTPException(status_code=400, detail="Unknown visible mark selection.")
-        return ["remove-ai-watermarks", "visible", str(input_path), "--mark", mark, "-o", str(output_path)]
+        if sensitivity not in {"auto", "strict"}:
+            raise HTTPException(status_code=400, detail="Invalid detection sensitivity.")
+        return ["remove-ai-watermarks", "visible", str(input_path), "--mark", mark, "--sensitivity", sensitivity, "-o", str(output_path)]
 
     if operation == "erase":
         if not regions:
             raise HTTPException(status_code=400, detail="At least one region is required for erase.")
-        command = ["remove-ai-watermarks", "erase", str(input_path), "-o", str(output_path)]
+        if inpaint_method not in {"telea", "ns"}:
+            raise HTTPException(status_code=400, detail="Invalid inpaint method.")
+        command = ["remove-ai-watermarks", "erase", str(input_path), "--inpaint-method", inpaint_method, "-o", str(output_path)]
         for region in regions:
             command.extend(["--region", region])
         return command
@@ -199,6 +211,66 @@ def health() -> dict[str, str]:
     return {"status": "ok"}
 
 
+@app.get("/api/config")
+def config() -> dict[str, int]:
+    """Upload limits from the running server, so UI validation matches backend."""
+    return {
+        "max_files": get_max_files(),
+        "max_upload_mb": get_max_upload_bytes() // (1024 * 1024),
+        "max_total_upload_mb": get_max_total_upload_bytes() // (1024 * 1024),
+    }
+
+
+def run_identify_command(path: Path, timeout: int) -> dict[str, object]:
+    """Fetch the upstream structured inspection verdict without altering the image."""
+    try:
+        completed = subprocess.run(  # nosec B603
+            ["remove-ai-watermarks", "identify", str(path), "--json"],
+            check=True, text=True, capture_output=True, timeout=timeout,
+        )
+        report = json.loads(completed.stdout)
+        if not isinstance(report, dict):
+            raise ValueError("The provenance report is not a JSON object.")
+        return report
+    except subprocess.TimeoutExpired as exc:
+        raise HTTPException(status_code=504, detail="Inspection timed out.") from exc
+    except (subprocess.CalledProcessError, ValueError) as exc:
+        logger.warning("Failed provenance scan: %s", type(exc).__name__)
+        raise HTTPException(status_code=500, detail="Could not inspect this image.") from exc
+
+
+@app.post("/api/identify")
+async def identify_images(
+    files: Annotated[list[UploadFile], File(alias="file")],
+    accept_terms: Annotated[bool, Form()] = False,
+) -> dict[str, object]:
+    """Batch identify provenance; never save a processed output for this mode."""
+    if not accept_terms:
+        raise HTTPException(status_code=400, detail="Confirm lawful use before processing.")
+    if not files or len(files) > get_max_files():
+        raise HTTPException(status_code=413, detail=f"Upload 1 to {get_max_files()} images.")
+    cleanup_expired_jobs()
+    job_dir = get_job_root() / uuid.uuid4().hex
+    job_dir.mkdir(parents=True, exist_ok=True)
+    reports: list[dict[str, object]] = []
+    total = 0
+    try:
+        for index, upload in enumerate(files, start=1):
+            extension = safe_extension(upload.filename or "")
+            path = job_dir / f"inspect-{index:03d}{extension}"
+            total += await store_upload(upload, path)
+            if total > get_max_total_upload_bytes():
+                raise HTTPException(status_code=413, detail="Total upload exceeds limit.")
+            validate_image_file(path, extension)
+            reports.append({
+                "name": upload.filename or path.name,
+                "report": run_identify_command(path, get_process_timeout()),
+            })
+    finally:
+        shutil.rmtree(job_dir, ignore_errors=True)
+    return {"count": len(reports), "reports": reports}
+
+
 @app.post("/api/process")
 async def process_image(
     files: Annotated[list[UploadFile], File(alias="file")],
@@ -206,6 +278,8 @@ async def process_image(
     accept_terms: Annotated[bool, Form()] = False,
     mark: Annotated[str, Form()] = "auto",
     regions: Annotated[str | None, Form()] = None,
+    sensitivity: Annotated[str, Form()] = "auto",
+    inpaint_method: Annotated[str, Form()] = "telea",
 ) -> dict[str, object]:
     if not accept_terms:
         raise HTTPException(status_code=400, detail="Confirm lawful use before processing.")
@@ -238,7 +312,7 @@ async def process_image(
             if total_upload_bytes > max_total_upload_bytes:
                 raise HTTPException(status_code=413, detail=f"Total upload is too large. Limit is {max_total_upload_bytes // 1024 // 1024} MB.")
             validate_image_file(input_path, extension)
-            command = build_command(operation, input_path, output_path, mark, parsed_regions)
+            command = build_command(operation, input_path, output_path, mark, parsed_regions, sensitivity, inpaint_method)
             log = run_watermark_command(command, get_process_timeout())
             logs.append(log)
 
