@@ -200,3 +200,71 @@ def test_cleanup_expired_jobs_removes_old_directories(monkeypatch, tmp_path: Pat
     assert removed == 1
     assert not old_job.exists()
     assert fresh_job.exists()
+
+
+def test_config_reports_server_limits(monkeypatch) -> None:
+    monkeypatch.setenv("MAX_FILES", "7")
+    monkeypatch.setenv("MAX_UPLOAD_MB", "15")
+    monkeypatch.setenv("MAX_TOTAL_UPLOAD_MB", "90")
+    response = client.get("/api/config")
+    assert response.status_code == 200
+    assert response.json() == {
+        "max_files": 7,
+        "max_upload_mb": 15,
+        "max_total_upload_mb": 90,
+    }
+
+
+def test_build_command_supports_new_mark_and_detection_modes() -> None:
+    from app.main import build_command
+
+    command = build_command(
+        "visible", Path("input.png"), Path("out.png"), "workbuddy", [], "strict"
+    )
+    assert command[:3] == ["remove-ai-watermarks", "visible", "input.png"]
+    assert command[command.index("--mark") + 1] == "workbuddy"
+    assert command[command.index("--sensitivity") + 1] == "strict"
+
+
+def test_erase_inpaint_method_is_forwarded() -> None:
+    from app.main import build_command
+
+    command = build_command(
+        "erase", Path("input.png"), Path("out.png"), "auto", ["1,2,3,4"],
+        inpaint_method="ns",
+    )
+    assert command[command.index("--inpaint-method") + 1] == "ns"
+    assert command[command.index("--region") + 1] == "1,2,3,4"
+
+
+def test_identify_returns_report_without_generating_download(monkeypatch, tmp_path: Path) -> None:
+    monkeypatch.setenv("JOB_ROOT", str(tmp_path))
+    monkeypatch.setattr(
+        "app.main.run_identify_command",
+        lambda path, timeout: {"platform": "gemini", "is_ai_generated": True, "confidence": "high"},
+    )
+    response = client.post(
+        "/api/identify",
+        data={"accept_terms": "true"},
+        files={"file": ("sample.png", image_bytes(), "image/png")},
+    )
+    assert response.status_code == 200
+    assert response.json()["reports"][0]["report"]["platform"] == "gemini"
+    assert "download_url" not in response.json()
+    assert list(tmp_path.iterdir()) == []
+
+
+def test_identify_requires_terms() -> None:
+    response = client.post(
+        "/api/identify",
+        data={"accept_terms": "false"},
+        files={"file": ("sample.png", image_bytes(), "image/png")},
+    )
+    assert response.status_code == 400
+
+
+def test_invalid_sensitivity_fails_before_cli() -> None:
+    from app.main import build_command
+
+    with pytest.raises(Exception):
+        build_command("visible", Path("in.png"), Path("out.png"), "auto", [], sensitivity="invalid")
