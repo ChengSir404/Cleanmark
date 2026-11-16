@@ -918,7 +918,7 @@ wheels = [
 
 [[package]]
 name = "remove-ai-watermarks"
-version = "0.55.0"
+version = "0.62.1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "c2pa-python", version = "0.38.1", source = { registry = "https://pypi.org/simple" }, marker = "sys_platform == 'linux'" },
@@ -928,9 +928,9 @@ dependencies = [
     { name = "pillow" },
     { name = "python-dotenv" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/69/97/82b1e35b89206e4950d7c3f415997a8b3661f16c9fefca2ea63e76f098b0/remove_ai_watermarks-0.55.0.tar.gz", hash = "sha256:957e7aaa7e103f90b81ef0471e5c6efb002c61fe3781d92855ee4662c8150692", size = 553366, upload-time = "2026-11-09T19:29:24.492Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/8c/4a/7ee3a0fd05283571d10c29b60fd4cef249294764beeec388dc7406430494/remove_ai_watermarks-0.62.1.tar.gz", hash = "sha256:fc457a02778fe4f1dae9549fe1a339d8c9ad1de97da2b6ca513134bd39c488b6", size = 613843, upload-time = "2026-11-15T17:18:20.349Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/e4/ef/6e339389c0c5f9e7ea2251ec388fee773a910230170a0d7b2926bb10ddd8/remove_ai_watermarks-0.55.0-py3-none-any.whl", hash = "sha256:2df3f03bdf1ebee2a5661a0fdb6c3dd0a958bef05c453477714eb213638a510e", size = 608165, upload-time = "2026-11-09T19:29:23.037Z" },
+    { url = "https://files.pythonhosted.org/packages/ac/96/28ce913c7e93b21904770ee94094e7a39cdac428831bf655c6be6c5b2206/remove_ai_watermarks-0.62.1-py3-none-any.whl", hash = "sha256:557a875c51cfb96f947ebdd864b801cfda681718b40362e9547513e49e02b1c8", size = 671981, upload-time = "2026-11-15T17:18:18.632Z" },
 ]
 
 [package.optional-dependencies]
@@ -965,7 +965,7 @@ requires-dist = [
     { name = "pillow", specifier = ">=12,<13" },
     { name = "pytest", marker = "extra == 'dev'", specifier = ">=9.0.3,<10" },
     { name = "python-multipart", specifier = ">=0.0.9" },
-    { name = "remove-ai-watermarks", extras = ["visible"], specifier = "==0.55.0" },
+    { name = "remove-ai-watermarks", extras = ["visible"], specifier = "==0.62.1" },
     { name = "uvicorn", extras = ["standard"], specifier = ">=0.30,<1" },
 ]
 provides-extras = ["dev"]
